@@ -55,8 +55,10 @@
 - [x] Seed danych: 12 przykładowych produktów w 6 kategoriach
 
 ## Zmiany kolorystyki
-- [x] Zmiana palety z niebieskiej na czarno-żółtą (wariant 3: czarny + żółty + szary)
-- [x] Zachowanie białego tła
+- [x] Zmiana palety na spójną czarno-złotą (Black & Gold Professional)
+- [x] Primary: #1a1a1a (czarny), Accent: #FFD700 (złoty), Background: #F5F3F0 (jasny beż)
+- [x] Hero gradient: czarny → ciemny szary
+- [x] Wszystkie elementy UI zaktualizowane
 
 ## Placeholdery (do implementacji w przyszłości)
 - [ ] Webhook Stripe (automatyczne oznaczanie zamówień jako opłacone)

@@ -85,7 +85,7 @@ export default function Home() {
   return (
     <PublicLayout>
       {/* ─── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative bg-gradient-to-br from-primary via-primary/80 to-[oklch(0.25_0.08_0)] text-white overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-[#3a3a3a] text-white overflow-hidden">
         {/* Background pattern */}
         <div
           className="absolute inset-0 opacity-5"
@@ -100,7 +100,7 @@ export default function Home() {
             </Badge>
             <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-6">
               Części do wycinarek{" "}
-              <span className="text-yellow-300">laserowych</span>
+              <span className="text-[#FFD700]">laserowych</span>
             </h1>
             <p className="text-lg lg:text-xl text-white/80 mb-8 max-w-2xl leading-relaxed">
               Materiały eksploatacyjne i części zamienne do przemysłowych wycinarek laserowych
