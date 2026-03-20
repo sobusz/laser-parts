@@ -85,7 +85,7 @@ export default function Home() {
   return (
     <PublicLayout>
       {/* ─── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative bg-gradient-to-br from-primary via-primary/90 to-[oklch(0.38_0.12_255)] text-white overflow-hidden">
+      <section className="relative bg-gradient-to-br from-primary via-primary/80 to-[oklch(0.25_0.08_0)] text-white overflow-hidden">
         {/* Background pattern */}
         <div
           className="absolute inset-0 opacity-5"
