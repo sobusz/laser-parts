@@ -54,6 +54,10 @@
 - [x] Checkpoint i prezentacja użytkownikowi
 - [x] Seed danych: 12 przykładowych produktów w 6 kategoriach
 
+## Zmiany kolorystyki
+- [x] Zmiana palety z niebieskiej na czarno-żółtą (wariant 3: czarny + żółty + szary)
+- [x] Zachowanie białego tła
+
 ## Placeholdery (do implementacji w przyszłości)
 - [ ] Webhook Stripe (automatyczne oznaczanie zamówień jako opłacone)
 - [ ] Konto klienta (historia zamówień)
