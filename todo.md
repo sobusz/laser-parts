@@ -52,6 +52,7 @@
 ## Testy i finalizacja
 - [x] Testy vitest dla procedur tRPC (15 testów)
 - [x] Checkpoint i prezentacja użytkownikowi
+- [x] Seed danych: 12 przykładowych produktów w 6 kategoriach
 
 ## Placeholdery (do implementacji w przyszłości)
 - [ ] Webhook Stripe (automatyczne oznaczanie zamówień jako opłacone)
