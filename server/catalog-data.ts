@@ -78,6 +78,7 @@ export const PRODUCTS: SeedProduct[] = [
       category: "trumpf",
       groupName: "Dysze z chromowym pokryciem PVD",
       sketchUrl: "/catalog/Obraz5.png",
+      description: "Wszystkie dysze konfekcjonowane w opakowaniach po 10 szt.",
     },
   ),
 
@@ -87,6 +88,8 @@ export const PRODUCTS: SeedProduct[] = [
     name: 'Zn-Se Meniscus lens 3,75"',
     referenceNumber: "0346104",
     sketchUrl: "/catalog/Obraz6.png",
+    description:
+      "Przedstawione poniżej soczewki są najwyższej jakości, oryginalnymi soczewkami, w które wyposażane są fabrycznie nowe wycinarki.",
     specifications: `${LENS_25}\nEfektywna długość ogniskowej: 95,3 mm`,
   },
   {
@@ -174,7 +177,7 @@ export const PRODUCTS: SeedProduct[] = [
       "HK25 Dysza fi 2,50 mm ze stożkiem",
       "HK30 Dysza fi 3,00 mm ze stożkiem",
     ],
-    { category: "bystronic", groupName: "Dysze wysokiego ciśnienia", sketchUrl: "/catalog/Obraz17.png" },
+    { category: "bystronic", groupName: "Dysze wysokiego ciśnienia", sketchUrl: "/catalog/Obraz17.png", description: "Wszystkie dysze konfekcjonowane w opakowaniach po 10 szt." },
   ),
   { category: "bystronic", groupName: "Dysze wysokiego ciśnienia", name: "HK35 Dysza fi 3,50 mm ze stożkiem", orderNumber: "HK35", sketchUrl: "/catalog/Obraz17.png" },
 
@@ -216,6 +219,8 @@ export const PRODUCTS: SeedProduct[] = [
     name: "Papier do czyszczenia soczewek KODAK, 50 ark. 70×115 mm",
     orderNumber: "lens cleaning paper",
     sketchUrl: "/catalog/Obraz1-1.png",
+    description:
+      "Do zakupów powyżej 2000 zł netto dołączamy oryginalny papier KODAK (50 ark. 70×115 mm) albo olej MOBIL VACTRA No. 1 — GRATIS.",
   },
 
   ...zip(
@@ -228,7 +233,7 @@ export const PRODUCTS: SeedProduct[] = [
       "K20 Dysza fi 2,00 mm ze stożkiem",
       "K25 Dysza fi 2,50 mm ze stożkiem",
     ],
-    { category: "bystronic", groupName: "Dysze standardowe K", sketchUrl: "/catalog/Obraz17.png" },
+    { category: "bystronic", groupName: "Dysze standardowe K", sketchUrl: "/catalog/Obraz17.png", description: "Wszystkie dysze konfekcjonowane w opakowaniach po 10 szt." },
   ),
 
   { category: "bystronic", groupName: "Materiały dodatkowe", name: "Ultraczysty aceton do czyszczenia optyki, 200 ml", orderNumber: "aceton" },
@@ -249,10 +254,17 @@ export const PRODUCTS: SeedProduct[] = [
       "NK30 Dysza fi 3,00 mm ze stożkiem … stal 25 mm",
       "NK30A Dysza fi 3,00 mm ze stożkiem … alu 10–12 mm",
     ],
-    { category: "bystronic", groupName: "Podwójne dysze serii BY", sketchUrl: "/catalog/Obraz16.png" },
+    { category: "bystronic", groupName: "Podwójne dysze serii BY", sketchUrl: "/catalog/Obraz16.png", description: "Wszystkie dysze konfekcjonowane w opakowaniach po 10 szt." },
   ),
 
-  { category: "mazak", groupName: "Turbo / Super Turbo – dysze Shower", name: "Tip fi 0,80 Shower type", referenceNumber: "46606330523" },
+  {
+    category: "mazak",
+    groupName: "Turbo / Super Turbo – dysze Shower",
+    name: "Tip fi 0,80 Shower type",
+    referenceNumber: "46606330523",
+    description:
+      "Maszyny: Turbo 10 kW, Super Turbo 15 kW, Super Turbo HI-PRO 20 kW. Te same dysze do L32 Plus, SUPER CHARGE, XT510, NEW NTX 48.",
+  },
   { category: "mazak", groupName: "Turbo / Super Turbo – dysze Shower", name: "Tip fi 1,50 Shower type", referenceNumber: "46606330523.15" },
 
   ...zip(
@@ -268,7 +280,12 @@ export const PRODUCTS: SeedProduct[] = [
       "Tip fi 2,50",
       "Tip fi 3,00",
     ],
-    { category: "mazak", groupName: "Turbo / Super Turbo – dysze standardowe" },
+    {
+      category: "mazak",
+      groupName: "Turbo / Super Turbo – dysze standardowe",
+      description:
+        "Maszyny: Turbo 10 kW, Super Turbo 15 kW, Super Turbo HI-PRO 20 kW oraz L32 Plus / SUPER CHARGE / XT510 / NTX 48. Double nozzle (fi 1,2; 1,5; 1,8; 2,0; 2,2; 2,5; 3,0) dostępne na zamówienie.",
+    },
   ),
 
   ...zip(
@@ -284,10 +301,26 @@ export const PRODUCTS: SeedProduct[] = [
       "Tip fi 2,50 chromowana",
       "Tip fi 3,00 chromowana",
     ],
-    { category: "mazak", groupName: "Turbo / Super Turbo – dysze chromowane" },
+    {
+      category: "mazak",
+      groupName: "Turbo / Super Turbo – dysze chromowane",
+      description: "Double nozzle chromowane (fi 1,2–3,0) dostępne na zamówienie. Także do L32 Plus / SUPER CHARGE / XT510 / NTX 48.",
+    },
   ),
 
-  { category: "mazak", groupName: "Części szybko zużywające się", name: "Retainer", referenceNumber: "46683300030" },
+  {
+    category: "mazak",
+    groupName: "Turbo / Super Turbo – dysze standardowe",
+    name: "Double nozzle (fi 1,2; 1,5; 1,8; 2,0; 2,2; 2,5; 3,0)",
+    description: "Dostępne na zamówienie.",
+  },
+  {
+    category: "mazak",
+    groupName: "Turbo / Super Turbo – dysze chromowane",
+    name: "Double nozzle chromowana (fi 1,2; 1,5; 1,8; 2,0; 2,2; 2,5; 3,0)",
+    description: "Dostępne na zamówienie.",
+  },
+  { category: "mazak", groupName: "Części szybko zużywające się", name: "Retainer", referenceNumber: "46683300030", description: "Pozostałe części ze schematu głowicy — na zamówienie." },
   { category: "mazak", groupName: "Części szybko zużywające się", name: "Tip adapter", referenceNumber: "46603350510" },
   { category: "mazak", groupName: "Części szybko zużywające się", name: "Base", referenceNumber: "46523300080" },
   { category: "mazak", groupName: "Części szybko zużywające się", name: "Ring", referenceNumber: "46603350002" },
@@ -318,7 +351,12 @@ export const PRODUCTS: SeedProduct[] = [
       "Tip fi 3,50 – Side Blow",
       "Tip fi 4,00 – Side Blow",
     ],
-    { category: "mazak", groupName: "Side Blow" },
+    {
+      category: "mazak",
+      groupName: "Side Blow",
+      description:
+        "Dysze Side Blow do L32 Plus / SUPER CHARGE / XT510 / NTX 48. Side Blow / Double nozzle (fi 1,0; 1,2; 1,5; 2,0; 2,2; 2,5; 3,0) na zamówienie.",
+    },
   ),
 
   ...zip(
@@ -346,7 +384,11 @@ export const PRODUCTS: SeedProduct[] = [
       "Tip fi 3,50 – Side Blow chromowana",
       "Tip fi 4,00 – Side Blow chromowana",
     ],
-    { category: "mazak", groupName: "Side Blow – chromowane" },
+    {
+      category: "mazak",
+      groupName: "Side Blow – chromowane",
+      description: "Side Blow / Double nozzle chromowane (fi 1,0–3,0) na zamówienie.",
+    },
   ),
 
   { category: "mazak", groupName: "Części zamienne Trumpf tips", name: "Teflon cover for TRUMPF tips", referenceNumber: "46683301840" },
@@ -411,7 +453,8 @@ export const PRODUCTS: SeedProduct[] = [
   {
     category: "inne",
     groupName: "Na zamówienie",
-    name: "Części Precitec / Amada / Prima / Salvagnini",
-    description: "Elementy szybko zużywające się sprowadzane na zamówienie. Czas oczekiwania 10–14 dni. Minimalna wartość zamówienia 1000 zł netto.",
+    name: "Części Precitec / Amada / Prima / Salvagnini i inne",
+    description:
+      "Elementy szybko zużywające się do laserów: Adige Sala, Amada, Balliu, Behrens, Beyeler, Cincinnati, CR Electronic, ESAB, Fanuc, Finn-Power, GHT, Haas, HACO, Laser Lab, LVD, Messer Griesheim, Mitsubishi, Murata Wiedemann, Muratec, Precitec, Prima Industries, Raskin, Rouchaud, Salvagnini, Valfivre, Weidmuller — sprowadzane na zamówienie. Czas oczekiwania 10–14 dni. Minimalna wartość zamówienia 1000 zł netto. Na życzenie przesyłamy katalog wraz z cennikiem.",
   },
 ];

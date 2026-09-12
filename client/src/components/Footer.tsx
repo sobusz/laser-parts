@@ -1,9 +1,10 @@
 import { Link } from "wouter";
 import { Phone, Mail, MapPin, Building2 } from "lucide-react";
 import BrandLockup from "@/components/BrandLockup";
+import { FOOTER_BLURB, OEM_DISCLAIMER } from "@shared/legacy-copy";
 
 const NAV_LINKS = [
-  { label: "Oferta handlowa", href: "/oferta" },
+  { label: "Oferta", href: "/oferta" },
   { label: "Optyka", href: "/optyka" },
   { label: "Oprogramowanie JETCAM", href: "/oprogramowanie" },
   { label: "Technologia", href: "/technologia" },
@@ -28,12 +29,11 @@ export default function Footer() {
             <div className="mb-4">
               <BrandLockup inverted />
             </div>
-            <p className="text-white/80 leading-relaxed">
-              Materiały eksploatacyjne i części do przemysłowych wycinarek laserowych. Warunki handlowe B2B.
+            <p className="text-white/80 leading-relaxed text-pretty">
+              {FOOTER_BLURB}
             </p>
-            <p className="text-white/70 text-sm mt-4 leading-relaxed">
-              Laser Parts nie jest powiązana z firmami TRUMPF®, Bystronic®, Mazak® ani innymi producentami.
-              Numery katalogowe służą orientacji.
+            <p className="text-white/70 text-sm mt-4 leading-relaxed text-pretty">
+              {OEM_DISCLAIMER}
             </p>
           </div>
 
@@ -99,7 +99,7 @@ export default function Footer() {
             <div className="mt-5 text-sm text-white/70 space-y-1">
               <p>NIP: 893-104-80-94</p>
               <p>REGON: 340043718</p>
-              <p>PKOBP S.A. 65 1440 1185 0000 0000 0400 4892</p>
+              <p className="whitespace-nowrap overflow-x-auto">PKO BP 65 1440 1185 0000 0000 0400 4892</p>
             </div>
           </div>
         </div>
@@ -107,7 +107,7 @@ export default function Footer() {
 
       <div className="border-t border-white/20">
         <div className="container py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-white/70">
-          <p>
+          <p className="text-pretty">
             © {new Date().getFullYear()} Laser Parts. Zdjęcia: Unsplash i Pexels (licencje Unsplash
             i Pexels).
           </p>

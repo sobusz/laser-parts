@@ -1,13 +1,14 @@
-export default function BrandLockup({ inverted: _inverted = false }: { inverted?: boolean }) {
+import { cn } from "@/lib/utils";
+
+export default function BrandLockup({ inverted = false }: { inverted?: boolean }) {
   return (
-    <span className="flex items-center">
-      <img
-        src="/brand/logo-yellow.png"
-        alt="Laser Parts"
-        className="h-12 w-12 object-contain shrink-0 bg-black"
-        width={48}
-        height={48}
-      />
+    <span
+      className={cn(
+        "font-mono text-[15px] sm:text-lg font-bold tracking-[0.08em] leading-none",
+        inverted ? "text-primary" : "text-foreground"
+      )}
+    >
+      Laser-Parts
     </span>
   );
 }

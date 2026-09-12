@@ -3,17 +3,40 @@ import { Link, useLocation, useSearch } from "wouter";
 import { ClipboardPlus, Package, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import PublicLayout from "@/components/PublicLayout";
 import PageHeader from "@/components/PageHeader";
 import CatalogSearch from "@/components/CatalogSearch";
+import CommercialTerms from "@/components/CommercialTerms";
 import { catalogHref } from "@/lib/catalog-url";
+import { CATALOG_INTRO, OTHER_OEM } from "@shared/legacy-copy";
 import { trpc } from "@/lib/trpc";
 import { useInquiry } from "@/contexts/InquiryContext";
 
-function formatPrice(price: string | null) {
-  if (!price) return "na zapytanie";
-  return `${Number(price).toFixed(2)} zł`;
+function sketchOf(p: { sketchUrl: string | null; imageUrl: string | null }) {
+  return p.sketchUrl || p.imageUrl || null;
+}
+
+function chunkBySharedSketch<T extends { sketchUrl: string | null; imageUrl: string | null }>(rows: T[]) {
+  const chunks: { sketch: string | null; rows: T[] }[] = [];
+  for (const row of rows) {
+    const sketch = sketchOf(row);
+    const last = chunks.at(-1);
+    if (last && sketch && last.sketch === sketch) {
+      last.rows.push(row);
+    } else {
+      chunks.push({ sketch, rows: [row] });
+    }
+  }
+  return chunks;
 }
 
 export default function Catalog() {
@@ -70,8 +93,8 @@ export default function Catalog() {
     <PublicLayout>
       <PageHeader
         crumbs={[{ label: "Strona główna", href: "/" }, { label: "Oferta handlowa" }]}
-        title={activeName ?? "Oferta handlowa"}
-        description="Realizacja z oferty podstawowej w dniu zamówienia — zamowienia@laser-parts.pl. Ceny netto; puste pole oznacza wycenę na zapytanie."
+        title={activeName ?? "Oferta"}
+        description={CATALOG_INTRO}
         meta={products ? `${products.length} pozycji` : undefined}
       />
 
@@ -122,10 +145,7 @@ export default function Catalog() {
                 <div className="bg-secondary text-white p-5">
                   <div className="h-1 w-12 bg-primary mb-4" />
                   <p className="font-semibold mb-2">Inne marki</p>
-                  <p className="text-xs text-white/70 mb-4 leading-relaxed">
-                    Adige, Amada, Precitec, Prima, Salvagnini i inne — na zamówienie, 10–14 dni,
-                    min. 1000 zł netto.
-                  </p>
+                  <p className="text-xs text-white/70 mb-4 leading-relaxed text-pretty">{OTHER_OEM}</p>
                   <Link href="/kontakt">
                     <Button size="sm" className="w-full uppercase tracking-[0.08em] text-[12px]">
                       Zapytaj
@@ -144,17 +164,24 @@ export default function Catalog() {
                   onQueryChange={setSearchQuery}
                 />
               </div>
+              <div className="mb-8">
+                <CommercialTerms compact />
+              </div>
 
               {prodsLoading ? (
                 <div className="space-y-3">
-                  {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-11 w-full" />)}
+                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-36 w-full" />)}
                 </div>
               ) : grouped.length === 0 ? (
                 <div className="bg-white border border-border text-center py-16 px-6">
                   <Package className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" aria-hidden="true" />
-                  <p className="font-medium mb-1">Brak pozycji dla podanych kryteriów.</p>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Szukasz części spoza katalogu? Zadzwoń albo napisz.
+                  <p className="font-medium mb-2">Brak pozycji spełniającej kryteria wyszukiwania.</p>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed text-pretty">
+                    Numer może być zapisany w innej formie albo część jest dostępna wyłącznie na zamówienie. Prosimy o kontakt telefoniczny lub e-mail:{" "}
+                    <a href="mailto:zamowienia@laser-parts.pl" className="whitespace-nowrap underline underline-offset-2">
+                      zamowienia@laser-parts.pl
+                    </a>
+                    .
                   </p>
                   <div className="flex flex-wrap justify-center gap-3">
                     <Button type="button" variant="outline" onClick={clearFilters}>
@@ -174,84 +201,87 @@ export default function Catalog() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-8">
-                  {grouped.map(([group, rows]) => (
+                <div className="space-y-10">
+                  {grouped.map(([group, rows]) => {
+                    const chunks = chunkBySharedSketch(rows);
+                    const note = rows.find((r) => r.description)?.description;
+                    return (
                     <section key={group}>
-                      <div className="flex items-baseline gap-4 mb-3">
-                        <h2 className="text-lg font-semibold tracking-tight">{group}</h2>
-                        <span className="h-px flex-1 bg-border" />
-                        <span className="font-mono text-xs text-muted-foreground">{rows.length}</span>
+                      <h2 className="text-lg font-semibold tracking-tight mb-2">{group}</h2>
+                      <div className="border border-border bg-white">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead className="pl-4 w-[9.5rem]">Nr referencyjny</TableHead>
+                              <TableHead className="w-[13.5rem] text-center">Szkic</TableHead>
+                              <TableHead className="pr-4">Nazwa części</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {chunks.flatMap((chunk) =>
+                              chunk.rows.map((p, i) => (
+                                <TableRow key={p.id} className="hover:bg-muted/40">
+                                  <TableCell className="pl-4 align-middle font-mono text-sm whitespace-nowrap">
+                                    <div>{p.referenceNumber ?? "—"}</div>
+                                    {p.orderNumber ? (
+                                      <div className="text-muted-foreground/70">{p.orderNumber}</div>
+                                    ) : null}
+                                  </TableCell>
+                                  {i === 0 ? (
+                                    <TableCell
+                                      rowSpan={chunk.rows.length}
+                                      className="align-middle text-center border-x border-border w-[13.5rem] px-4 py-6 whitespace-normal"
+                                    >
+                                      {chunk.sketch ? (
+                                        <img
+                                          src={chunk.sketch}
+                                          alt={`Szkic: ${group}`}
+                                          className="mx-auto w-[200px] max-w-full h-auto"
+                                        />
+                                      ) : (
+                                        <Package className="w-8 h-8 text-muted-foreground/40 mx-auto" aria-hidden="true" />
+                                      )}
+                                    </TableCell>
+                                  ) : null}
+                                  <TableCell className="pr-4 whitespace-normal">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <Link
+                                        href={`/produkt/${p.slug}`}
+                                        className="text-sm hover:underline underline-offset-4"
+                                      >
+                                        {p.name}
+                                      </Link>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="shrink-0 h-8 w-8"
+                                        aria-label={`Dodaj ${p.name} do zapytania`}
+                                        onClick={() => {
+                                          addItem({
+                                            productId: p.id,
+                                            name: p.name,
+                                            referenceNumber: p.referenceNumber,
+                                            unit: p.unit,
+                                          });
+                                          toast.success("Dodano do zapytania");
+                                        }}
+                                      >
+                                        <ClipboardPlus className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )),
+                            )}
+                          </TableBody>
+                        </Table>
                       </div>
-                      <div className="overflow-x-auto border border-border bg-white">
-                        <table className="w-full text-[15px]">
-                          <caption className="sr-only">Części z grupy {group}</caption>
-                          <thead className="bg-secondary text-white">
-                            <tr className="text-xs uppercase tracking-[0.08em]">
-                              <th scope="col" className="text-left px-4 py-3 font-semibold">Nr ref.</th>
-                              <th scope="col" className="text-left px-4 py-3 font-semibold hidden md:table-cell">Nr zam.</th>
-                              <th scope="col" className="text-left px-4 py-3 font-semibold hidden lg:table-cell">Szkic</th>
-                              <th scope="col" className="text-left px-4 py-3 font-semibold">Nazwa części</th>
-                              <th scope="col" className="text-left px-4 py-3 font-semibold">Cena netto</th>
-                              <th scope="col" className="px-4 py-3"><span className="sr-only">Akcje</span></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {rows.map((p) => (
-                              <tr
-                                key={p.id}
-                                className="border-b border-border last:border-0 odd:bg-muted/25 hover:bg-primary/15 transition-colors"
-                              >
-                                <td className="px-4 py-3 font-mono text-sm font-medium whitespace-nowrap">
-                                  {p.referenceNumber ?? "—"}
-                                </td>
-                                <td className="px-4 py-3 font-mono text-sm text-muted-foreground hidden md:table-cell">
-                                  {p.orderNumber ?? "—"}
-                                </td>
-                                <td className="px-4 py-3 hidden lg:table-cell">
-                                  {p.sketchUrl || p.imageUrl ? (
-                                    <img
-                                      src={p.sketchUrl || p.imageUrl || ""}
-                                      alt={`Szkic: ${p.name}`}
-                                      className="h-12 w-12 object-contain"
-                                    />
-                                  ) : (
-                                    <span className="text-muted-foreground">—</span>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3">
-                                  <Link href={`/produkt/${p.slug}`} className="font-medium underline decoration-border decoration-2 underline-offset-4 hover:decoration-primary">
-                                    {p.name}
-                                  </Link>
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap font-mono text-sm">
-                                  {formatPrice(p.price)}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <Button
-                                    variant="outline"
-                                    className="gap-1.5 h-10"
-                                    aria-label={`Dodaj ${p.name} do zapytania`}
-                                    onClick={() => {
-                                      addItem({
-                                        productId: p.id,
-                                        name: p.name,
-                                        referenceNumber: p.referenceNumber,
-                                        unit: p.unit,
-                                      });
-                                      toast.success("Dodano do zapytania");
-                                    }}
-                                  >
-                                    <ClipboardPlus className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Do zapytania</span>
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      {note ? (
+                        <p className="text-sm text-muted-foreground mt-3 max-w-3xl">{note}</p>
+                      ) : null}
                     </section>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

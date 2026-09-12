@@ -1,6 +1,6 @@
 // Loaded here as well as in _core/index.ts so `pnpm seed` works as a standalone script.
 import "dotenv/config";
-import { getDb, getCategories, createCategory, createProduct, updateProduct, getArticles, createArticle, updateArticle, upsertUser, getUserByEmail, getProducts } from "./db";
+import { getDb, getCategories, createCategory, createProduct, updateProduct, getArticles, createArticle, updateArticle, upsertUser, getUserByEmail, getProducts, getUsedMachines, createUsedMachine, updateUsedMachine } from "./db";
 import { hashPassword } from "./password";
 import { PRODUCTS } from "./catalog-data";
 
@@ -19,7 +19,7 @@ const CATEGORIES = [
   { name: "BYSTRONIC", slug: "bystronic", description: "Części eksploatacyjne i optyka do wycinarek Bystronic.", sortOrder: 2 },
   { name: "MAZAK", slug: "mazak", description: "Dysze i części głowicy do laserów Mazak.", sortOrder: 3 },
   { name: "LVD", slug: "lvd", description: "Elementy eksploatacyjne do wycinarek LVD.", sortOrder: 4 },
-  { name: "Inne marki", slug: "inne", description: "Części na zamówienie: Amada, Precitec, Prima, Salvagnini i inne.", sortOrder: 5 },
+  { name: "Inne marki", slug: "inne", description: "Adige, Amada, Precitec, Prima, Salvagnini i inne — na zamówienie, 10–14 dni, min. 1000 zł netto.", sortOrder: 5 },
   { name: "Optyka", slug: "optyka", description: "Soczewki Zn-Se, lustra i szkła ochronne.", sortOrder: 6 },
 ];
 
@@ -32,88 +32,135 @@ const ARTICLES = [
     slug: "optyka",
     section: "optyka" as const,
     title: "Optyka laserowa",
-    excerpt: "Soczewki II-VI i Ophir, lustra oraz szkła ochronne do laserów CO2 i fiber.",
-    body: `Oferujemy optykę do przemysłowych wycinarek laserowych: soczewki do laserów CO2 (II-VI / Ophir), lustra plano, sferyczne i chłodzone wodą oraz szkła ochronne do laserów fiber i dyskowych.
+    excerpt: "Soczewki, lustra i szyby ochronne do laserów CO2 i fiber. Dobór na podstawie modelu maszyny i numeru referencyjnego.",
+    body: `Oferta: soczewki · lustra · szkła ochronne
 
 Soczewki Duralens
-Soczewki dla High-Power CO2, kompatybilne z laserami CO2 na rynku. Zatwierdzone i używane przez producentów maszyn OEM. Wysoka trwałość i dokładność, obróbka CNC, absorpcja ≤ 0,2%.
+Soczewki dla High-Power CO2. Kompatybilne ze wszystkimi laserami CO2 na rynku. Zatwierdzone i używane przez producentów maszyn OEM. Zaprojektowane dla wysokiej trwałości i dokładności. Wytwarzane na obrabiarce CNC dla powtarzalności. Absorpcja ≤ 0,2%.
 
-Soczewki o obniżonej absorpcji
-Absorpcja < 0,15%, maksymalna stabilizacja wiązki, odporność na odpryski i wilgoć. Rekomendowane także dla laserów powyżej 5 kW oraz cięcia aluminium i stali wysokostopowych.
+Soczewki o obniżonej absorpcji ciepła wiązki (High-Power CO2)
+Kompatybilne ze wszystkimi laserami CO2 na rynku. Gwarantowana absorpcja < 0,15%. Maksymalna stabilizacja wiązki skupiającej. Najwyższa odporność na odpryski. Prostsze czyszczenie i utrzymanie. Odporne na wilgoć. Najtrwalsza powłoka na rynku. Rekomendowane przez producentów OEM. Proponowane dla laserów CO2, w tym powyżej 5 kW. Nieradioaktywna powłoka. Do cięcia aluminium i stali wysokostopowych.
 
-Soczewki o najniższej absorpcji
-Absorpcja < 0,13%. Przezroczysta powłoka pozwala wiązce HeNe być widoczną na detalu. Soczewki można sprawdzać na filtrach polaryzujących pod kątem naprężeń termicznych.
-
-Lustra plano Cu i Si
-Transport wiązki z rezonatora do głowicy opiera się na lustrach. Bazą jest krzem (Si) — niska masa, osie ruchome — lub miedź (Cu) — przewodność cieplna i możliwość chłodzenia. Właściwości optyczne (odbicie, przesunięcie fazowe) wynikają z powłok.
-
-Lustra Cu chłodzone wodą
-Kanały chłodzące tuż pod powłoką ograniczają ekspozycję cieplną w maszynach dużej mocy. Rozwiązanie możliwe w lustrach miedzianych.
-
-Lustra sferyczne
-Mała średnica wiązki ma dużą rozbieżność i wysoką gęstość. Średnicę zwiększa układ teleskopowy: lustro wypukłe + wklęsłe, na bazie miedzi.
-
-Szkła ochronne
-Dla laserów fiber i dyskowych. Chronią soczewkę fokusującą przed odpryskami i dymem. Po zabrudzeniu lub zarysowaniu wymagają wymiany.
+Soczewki o najniższej absorpcji ciepła wiązki (High-Power CO2)
+Gwarantowana absorpcja < 0,13%. Maksymalna stabilizacja wiązki tnącej. Przezroczysta powłoka pozwala wiązce HeNe być widoczną na detalu. Soczewki można sprawdzać na filtrach polaryzujących w celu wykrycia naprężeń termicznych. Rekomendowane przez producentów OEM. Proponowane dla laserów CO2, w tym powyżej 5 kW. Nieradioaktywna powłoka. Do cięcia aluminium i stali wysokostopowych.
 
 Oprawki Amada
-Wymienne oprawki soczewek do laserów Amada CO2: szybka wymiana bez śrub, O-ring zamiast toksycznej substancji, wielokrotnego użytku.
+Pełna oferta wymiennych oprawek soczewek do laserów Amada CO2. Szybka i bezpieczna wymiana soczewek — bez wymiany oprawki. Usprawnione czyszczenie. Regulacja długości ogniskowej. Samozamykający się mechanizm — bez śrub i nakrętek. O-ring zamiast toksycznej substancji z klasycznego rozwiązania. Wielokrotnego użytku.
 
-Dobór: prosimy o kontakt z modelem maszyny i numerem referencyjnym.`,
+Lustra
+W laserach CO2 transport wiązki z rezonatora do głowicy opiera się na lustrach. W uproszczeniu minimalna liczba luster w laserach 2D może wynosić 2, w praktyce nowoczesne maszyny mają ich więcej; w 3D liczba jeszcze rośnie.
+
+Lustra plano Cu i Si
+Bazą jest krzem (Si) oraz miedź (Cu). Lustra krzemowe mają niską masę — preferowane w osiach ruchomych przy dużych przyspieszeniach. Lustra miedziane mają dobrą przewodność cieplną i mogą być chłodzone cieczą; z kanałami chłodzącymi — w maszynach dużej mocy. Właściwości optyczne (odbicie, przesunięcie fazowe) wynikają z powłok.
+
+Lustra Cu chłodzone wodą
+Wzrost mocy laserów CO2 stawia wyższe wymagania trwałości. Chłodzenie wodą ogranicza ekspozycję cieplną: kanały tuż pod powłoką. Rozwiązanie możliwe tylko w lustrach miedzianych.
+
+Lustra sferyczne
+Mała średnica wiązki z lasera CO2 ma dużą rozbieżność i wysoką gęstość. Średnicę zwiększa układ teleskopowy: lustro wypukłe + wklęsłe, na bazie miedzi.
+
+Szkła ochronne
+Dla laserów fiber i dyskowych. Chronią optykę fokusującą przed odpryskami i dymem. Po zabrudzeniu lub zarysowaniu wymagają wymiany.
+
+Dobór: model maszyny i numer referencyjny — kontakt lub katalog optyki.`,
   },
   {
     slug: "nowosc",
     section: "nowosc" as const,
     title: "Nowość: dysze chromowane PVD do TRUMPF",
-    excerpt: "Pokrycie chromem ogranicza przywieranie odprysków i chroni otwór dyszy.",
-    body: `Problemy ze zniszczonymi dyszami? Przyklejenia odprysków? Mamy rozwiązanie.
+    excerpt: "Dysze chromowane PVD do maszyn TRUMPF: powłoka ogranicza przywieranie odprysków do otworu i wydłuża stabilność procesu cięcia. Numery znajdują się w katalogu TRUMPF.",
+    body: `Jeden z największych producentów obrabiarek na rynku europejskim w artykule „Zmienianie dysz jest łatwe” napisał:
 
-Rozprysk, który przywiera do dyszy, rozregulowuje ognisko, pogarsza działanie czujników pojemnościowych i zakłóca ciśnienie gazów roboczych. Skutkiem może być zła jakość cięcia albo przerwanie procesu. Miedź jest delikatna — otwór dyszy ulega rozkalibrowaniu. Lepiej powlekać dysze tak, aby rozpryski nie przywierały.
+„Dla zmian bezzałogowych nieprzerwane działanie w bezpiecznych warunkach jest najistotniejsze. Aby zapewnić ciągłość wysokiej jakości cięcia, zużyte dysze muszą być wymienione bezzwłocznie. Podczas programowania użytkownik może wyszczególnić, kiedy — po konkretnej liczbie godzin — zużyte dysze muszą być wymienione automatycznie.”
 
-Proponujemy dysze do wycinarek TRUMPF z pokryciem chromowym PVD.
+Oto problem: zniszczenie albo ograniczenie funkcji dyszy przez rozpryski jest nieprzewidywalne — zarówno na maszynach bezobsługowych, jak i przy operatorze.
+
+Dwa podstawowe czynniki niszczące dysze tnące
+
+1. Przyklejenia / zaklejenia
+Rozprysk, który przywiera do dyszy, rozregulowuje ognisko, upośledza pojemnościowe układy pomiarowe, zakłóca ciśnienie i strugę gazów roboczych. Skutkiem jest zła jakość cięcia aż do przerwania procesu. Rozpryski przylegające często niszczą dyszę natychmiast. Wiele źródeł nie zaleca automatycznego czyszczenia dyszy, bo usuwa tylko rozpryski na zewnątrz, nie wewnątrz. Miedź jest delikatna — rozkalibrowaniu ulega też otwór. Lepiej powlekać dysze tak, aby rozpryski nie mogły przywierać.
+
+2. „Zamazania”
+Zniszczenie dyszy na skutek zetknięcia z materiałem (kolizja). Wymaga uważniejszego programowania.
 
 Pokrycie PVD chromowe
-Polecane dla stali „czarnej”, stali nierdzewnych i kwasoodpornych. Rozpryski nie przywierają do zewnętrznych ani wewnętrznych części dyszy. Odpryski z wnętrza są wydmuchiwane przez gaz roboczy. Sprawdzają się także przy foliowanych arkuszach blach nierdzewnych i aluminiowych — roztopiona folia nie przywiera, a pozostałości łatwo zetrzeć.
+Polecane dla stali „czarnej”, stali nierdzewnych i kwasoodpornych. Rozpryski nie przywierają do zewnętrznych ani wewnętrznych części dyszy. Odpryski z wnętrza są wydmuchiwane przez gaz roboczy i nie zwężają otworu. Sprawdzają się przy foliowanych arkuszach blach nierdzewnych i aluminiowych: roztopiona folia nie przywiera, pozostałości łatwo zetrzeć.
 
-Oferta dysz chromowanych znajduje się w katalogu TRUMPF.`,
+Oferta dysz chromowanych: katalog TRUMPF.`,
   },
   {
     slug: "oprogramowanie",
     section: "oprogramowanie" as const,
     title: "Oprogramowanie JETCAM",
-    excerpt: "JETCAM Expert CAD/CAM do programowania wycinarek laserowych, plazmowych i wodnych.",
-    body: `JETCAM Expert CAD/CAM oraz komplet programów dopasowują się do wielkości firmy — od małych zakładów do korporacji.
+    excerpt: "JETCAM Expert CAD/CAM — oprogramowanie do nestingu i sterowania wycinarką. W Polsce zapewniamy wdrożenie, szkolenia i wsparcie, od pojedynczej maszyny po park z automatycznym załadunkiem. Zapytania: laser-parts@laser-parts.pl.",
+    body: `JETCAM Expert CAD/CAM oraz komplet programów dopasowują się do wielkości firmy — od małych zakładów do korporacji. Dla firm szukających maksymalnej automatyzacji JETCAM Expert dostarcza programy dla wykrawarek, wycinarek laserowych do cięcia metalu, frezarek kształtowych, zaginarek oraz wycinarek do kompozytów, a także dla konfiguracji z załadunkiem/rozładunkiem i nożycami.
 
-JETCAM to oprogramowanie CAD/CAM do automatycznego programowania maszyn do cięcia blach. Stosowane przez ponad 10 000 użytkowników w ponad 70 krajach. Oferuje nesting i programowanie NC dla wycinarek laserowych, plazmowych, wodnych oraz wykrawarek.
+JETCAM jest instalowany i używany w ponad 70 krajach. Wysoki stopień automatyzacji przy łatwej obsłudze. System oparty na bazie danych w technologii SEKT: automatyczne łączenie materiału, narzędzi i parametrów maszyny. Rozwiązanie dla pojedynczej maszyny i dla parku maszyn. Klienci dostają gwarancję aktualizacji całego programu albo wybranych funkcji.
 
-Główne funkcje
-- Automatyczny nesting minimalizujący odpad
-- Postprocesory NC dla Trumpf, Bystronic, Mazak, LVD, Amada i innych
-- Integracja z ERP/MES (JETCAM Orders)
+Funkcja Free Form High Performance Nesting w porównaniu z konkurencyjnym rozmieszczeniem daje zwykle ok. 10% oszczędności materiału.
 
-Wersje
-JETCAM Expert — programowanie NC, import DXF/DWG/IGES/STEP, nesting, symulacja cięcia.
-JETCAM Orders — zarządzanie zleceniami, planowanie nestingu, praca sieciowa.
+Geometria
+JETCAM ma funkcje CAD do rysowania oraz import DXF i IGES.
 
-Jako partner JETCAM w Polsce oferujemy wsparcie, szkolenia i wdrożenia. Zapytania: laser-parts@laser-parts.pl.`,
+Procedury oraz wybór narzędzi
+Na bazie SEKT system dobiera procedury i narzędzia według parametrów maszyny, materiału i preferencji użytkownika. M.in.: mikrozłączenia, automatyczne pozycjonowanie, wybór narożnika (pętle, promienie), cięcie ażurów, algorytmy autorozmieszczania.
+
+Rozmieszczanie / pakietowanie
+Od opcji prostych do zaawansowanych. Autorozmieszczanie z modułem optymalizacji obniża koszt, zużycie materiału i czas. Współpraca z MRP. Dobór narzędzi i ścieżek według SEKT, parametrów maszyny i klienta. Ryzyko kolizji głowicy z materiałem jest zminimalizowane. Ścieżki można poprawić ręcznie.
+
+Przykładowa lista sterowanych maszyn
+Accu-Router, Adige Sala, AKS (plasma), Amada, American GFM Cutter, Balliu, Baltec, Beyeler, Behrens, Blackman & White, Burny, Bystronic, Carrier, Cincinnati, Creneau, Danobat, Di-Acro, Economos, Edel, ESAB, Esprit, Euromac, Exact, Fagor, Farley Plasma, Finn-Power, Flow, Gerber, GFM, Goiti, Haco (Omes), Hangkwang, Heidenhain, Held Pedilas, Hypertherm, Jinfangyuan, Komatsu, Koike Whitney, Zinser, Zund, Komo, Lazerblade, Lasercomb, Laser Lab, Lectra, LVD/Shape, Mazak, Messer Griesheim, Metrisa, Microstep, Mitsubishi, Motion Master, Multicam, Murata Wiedemann, Nisshinbo, NTC Nippei, Omax, Pass, Power Press, Prima, Pullmax, Rainer, Raskin, Rhodes Pierce-all, Rohmer and Stimpfig, Ridder Waricut, Safan Laser, Salvagnini, Samho, Shadow, Shoda, Smeral, Strippit, Tailift, Thermwood, TrennTek, Trumpf, Vanad, Wadkin.
+
+Jako partner JETCAM w Polsce: wsparcie, szkolenia, wdrożenia. Zapytania: laser-parts@laser-parts.pl.`,
   },
   {
     slug: "technologia",
     section: "technologia" as const,
     title: "Technologia laserowa",
-    excerpt: "Podstawy zastosowania technologii laserowej w metalurgii oraz kluczowe elementy eksploatacyjne.",
-    body: `Zachęcamy do lektury o podstawach zastosowania technologii laserowej w metalurgii. Przybliżamy procesy i metody wykorzystania urządzeń laserowych.
+    excerpt: "Wprowadzenie do cięcia laserowego: powstawanie wiązki, gazy procesowe oraz zachowanie materiałów. Opracowanie pochodzi z naszej oferty handlowej i pozostaje aktualne jako materiał poglądowy.",
+    body: `1. Wprowadzenie
+2. Powstawanie promienia laserowego
+3. Cięcie laserowe
+4. Gazy laserowe
+5. Przykładowe detale
 
-Wycinarka laserowa to precyzyjne urządzenie przemysłowe, w którym skoncentrowana wiązka umożliwia cięcie, grawerowanie i perforowanie materiałów. Jakość elementów optycznych i eksploatacyjnych wpływa na dokładność procesu.
+1. Wprowadzenie
+Cięcie laserowe — jedna z metod cięcia termicznego — stanowi podstawę ekonomicznej produkcji w przemyśle metalowym. Cechą jest punktowe wprowadzenie energii i wysokoenergetyczny strumień tnący. Celem jest wytwarzanie elementów, które bez dodatkowej obróbki nadają się do dalszej przeróbki. Warunkiem dobrej jakości i utrzymania wymiarów jest dokładnie prowadzony strumień w połączeniu ze stabilną maszyną o dużej odporności na drgania i dobrej powtarzalności. Wysokie wymagania wobec geometrii powierzchni cięcia spełniają swobodnie programowalne maszyny CNC.
 
-Kluczowe elementy
-Dysze tnące — kierują gaz tnący (azot, tlen, powietrze). Geometria i stan dyszy wpływają na krawędź cięcia.
-Soczewki fokusujące — skupiają wiązkę. Zanieczyszczenie obniża jakość cięcia.
-Ceramika głowicy — pozycjonowanie dyszy i izolacja czujnika pojemnościowego.
-Szyby ochronne — chronią soczewkę przed odpryskami.
+2. Powstawanie promienia laserowego
+Do wytworzenia ciepła stosuje się gazowe lasery CO2 oraz lasery na ciele stałym (Nd-YAG). Szczególnie duże sprawności i moce daje laser gazowy CO2. W wyniku drgań cząsteczki CO2 powstaje podczerwień o długości fali 10,6 µm. Aby uzyskać wymaganą ilość ciepła na blachę / w szczelinie, promień musi zostać zogniskowany przez soczewki lub system luster. Absorpcja nagrzewa przedmiot do temperatury procesu: temperatury zapłonu przy cięciu ze spalaniem (utlenianiem) albo temperatury topnienia przy cięciu przez stapianie.
 
-Konserwacja
-Regularna inspekcja dyszy, czyszczenie optyki dedykowanymi środkami, kontrola ceramiki. Części prezentowane w ofercie są częściami wykonanymi dla lub przez Laser Parts. Odniesienia do numerów katalogowych producentów służą orientacji.`,
+3. Cięcie laserowe
+Cięcie promieniem lasera ma tolerancje zbliżone do obróbki mechanicznej. Obok maszyn x-y stosuje się układy do cięcia 3D. Na ostrych narożach potrzebne jest automatyczne przyporządkowanie parametrów (moc do prędkości) wycinanemu konturowi.
+
+Według DIN 2310 trzy metody:
+· cięcie ze spalaniem
+· cięcie przez stapianie
+· cięcie z wykorzystaniem sublimacji
+
+Cięcie ze spalaniem (utlenianiem)
+Materiał nagrzewa się w szczelinie do temperatury zapłonu (dla stali konstrukcyjnej 1150–1200 °C). Najczęstsze zastosowanie: stale niestopowe i niskostopowe. W tlenie materiał spala się, tworząc rzadkopłynny żużel wydmuchiwany energią kinetyczną strumienia. Reakcja egzotermiczna dostarcza część energii i pozwala na duże prędkości przy względnie małej mocy.
+
+Cięcie przez stapianie
+Materiał jest stapiany na całej grubości i wydmuchiwany gazem o dużej energii kinetycznej. Stosowane głównie do stali wysokostopowych i metali nieżelaznych. Gaz tnący (i ochrona optyki): azot lub argon. Cała energia do temperatury topnienia musi pochodzić z promienia (lub dodatkowo z energii elektrycznej). Bez reakcji egzotermicznej prędkość jest mniejsza niż przy spalaniu. Zaleta: powierzchnie wolne od tlenków — ważne przy stalach wysokostopowych. Dla stali Cr-Ni i powierzchni bez gratu: ciśnienie gazu 15–20 bar; głowica i instalacja gazu muszą to wytrzymać.
+
+Cięcie z sublimacją
+Materiał w szczelinie wyparowuje pod zogniskowanym promieniem i jest wydmuchiwany ciśnieniem pary oraz gazu tnącego. W praktyce trzech metod nie da się ostro rozdzielić.
+
+4. Gazy laserowe
+Mieszanina dwutlenku węgla, helu i azotu o bardzo dużej czystości. Stosunek składników dobiera się do typu lasera. Do lasera potrzebne jest specjalne doprowadzenie, żeby zachować czystość.
+
+Gazy robocze (tnące)
+TLEN — do cięcia ze spalaniem stali niestopowych: tlen 3,5 (99,95%). Wobec 2,5 (99,5%) prędkość większa o ok. 20%.
+AZOT — stale wysokostopowe, materiały ocynkowane, powlekane galwanicznie, niemetale. Produkcyjnie często 2,8 (99,8%); mogą występować barwy nalotowe na dolnych krawędziach. Metalicznie czyste krawędzie: azot min. 3,5 — drożej.
+INNE — aluminium: mieszaniny azotu, tlenu i argonu. Tytan: czysty argon lub argon–tlen. Stosuje się też sprężone powietrze o podwyższonej czystości, kosztem spadku wydajności.
+
+5. Przykładowe detale
+Przede wszystkim stale zwykłej jakości i stopowe. Dobrze poddają się też metale nieżelazne: miedź i jej stopy oraz aluminium. Dopuszcza się niemetale, np. pleksi, tworzywa, sklejkę — pod warunkiem, że materiał nie wydziela związków trujących lub wybuchowych. Wykluczone jest cięcie PVC.
+
+Przy niemetalach problemem jest odległość dyszy. W nowoczesnych urządzeniach ustawiają ją czujniki pojemnościowe — nie działają przy materiałach nieprzewodzących.
+
+Dla urządzenia ok. 1,8 kW orientacyjne grubości: stal St do 15 mm; INOX do 6 mm; aluminium i miedź do 4 mm.`,
   },
 ];
 
@@ -210,6 +257,23 @@ export async function seedIfEmpty() {
     } else {
       await createArticle({ ...a, published: true, sortOrder: i });
     }
+  }
+
+  const machines = await getUsedMachines(false);
+  const l3030 = {
+    title: "TRUMATIC L3030 (używana)",
+    slug: "trumatic-l3030",
+    description:
+      "Urządzenie używane. Producent: TRUMPF. Nazwa handlowa: TRUMATIC L3030. Parametry i stan — kontakt telefoniczny lub e-mail.",
+    contactNote: "+48 693 606 067 lub laser-parts@laser-parts.pl",
+    active: true,
+    sortOrder: 0,
+  };
+  const existingL3030 = machines.find((m) => m.slug === l3030.slug);
+  if (existingL3030) {
+    await updateUsedMachine(existingL3030.id, l3030);
+  } else {
+    await createUsedMachine(l3030);
   }
 
   console.log(`[Seed] Katalog: ${PRODUCTS.length} pozycji (nowe ${created}, zaktualizowane ${updated}). Login admin:`, email);
