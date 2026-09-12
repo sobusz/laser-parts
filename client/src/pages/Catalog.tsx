@@ -16,6 +16,7 @@ import PublicLayout from "@/components/PublicLayout";
 import PageHeader from "@/components/PageHeader";
 import CatalogSearch from "@/components/CatalogSearch";
 import CommercialTerms from "@/components/CommercialTerms";
+import OrderGratis from "@/components/OrderGratis";
 import { catalogHref } from "@/lib/catalog-url";
 import { CATALOG_INTRO, OTHER_OEM } from "@shared/legacy-copy";
 import { trpc } from "@/lib/trpc";
@@ -100,9 +101,12 @@ export default function Catalog() {
 
       <div className="tech-grid">
         <div className="container py-10">
+          <div className="mb-8">
+            <OrderGratis />
+          </div>
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-64 shrink-0">
-              <div className="lg:sticky lg:top-20 space-y-4">
+                <div className="lg:sticky lg:top-20 space-y-4">
                 <div className="bg-white border border-border">
                   <h2 className="eyebrow text-muted-foreground px-4 py-3 border-b border-border">Marki</h2>
                   {catsLoading ? (
@@ -163,9 +167,6 @@ export default function Catalog() {
                   categorySlug={selectedCategory}
                   onQueryChange={setSearchQuery}
                 />
-              </div>
-              <div className="mb-8">
-                <CommercialTerms compact />
               </div>
 
               {prodsLoading ? (
@@ -285,6 +286,9 @@ export default function Catalog() {
                 </div>
               )}
             </div>
+          </div>
+          <div className="mt-12">
+            <CommercialTerms compact />
           </div>
         </div>
       </div>

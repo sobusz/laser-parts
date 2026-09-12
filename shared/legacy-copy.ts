@@ -19,10 +19,21 @@ export const TRADE_TERMS = [
   },
 ] as const;
 
-export const PROMO_HEADING = "Gratis przy zamówieniu od 2000 zł netto";
+export const PROMO_THRESHOLD = "2000 zł netto";
 
-export const PROMO_OVER_2000 =
-  "Do zamówienia dołączamy papier do czyszczenia soczewek KODAK (50 kartek 70×115 mm) albo olej MOBIL VACTRA No. 1. Prosimy o wskazanie preferencji przy składaniu zamówienia.";
+export const PROMO_OPTIONS = [
+  {
+    name: "Papier KODAK",
+    detail: "50 kartek 70×115 mm do czyszczenia soczewek",
+  },
+  {
+    name: "Olej MOBIL VACTRA No. 1",
+    detail: "Do prowadnic — zamiast papieru, według wskazania w zamówieniu",
+  },
+] as const;
+
+export const PROMO_NOTE =
+  "Preferencję prosimy podać w zapytaniu ofertowym. Gratis dotyczy jednego z dwóch wariantów.";
 
 export const BANK_FIELDS = [
   { label: "Odbiorca", value: "LASER PARTS" },

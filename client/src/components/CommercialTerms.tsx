@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Check, Copy, Gift } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { BANK_FIELDS, PROMO_HEADING, PROMO_OVER_2000, TRADE_TERMS } from "@shared/legacy-copy";
+import { BANK_FIELDS, TRADE_TERMS } from "@shared/legacy-copy";
 
 function CopyRow({
   label,
@@ -70,18 +70,6 @@ export default function CommercialTerms({ compact }: { compact?: boolean }) {
             </p>
           </div>
         ))}
-      </div>
-
-      <div className="border border-primary bg-[#F5C400]/12 px-5 py-5 sm:px-6 sm:py-6">
-        <div className="flex gap-4 items-start">
-          <div className="hidden sm:flex size-11 shrink-0 items-center justify-center bg-primary text-primary-foreground">
-            <Gift className="size-5" aria-hidden="true" />
-          </div>
-          <div className="min-w-0">
-            <p className="eyebrow text-foreground mb-2">{PROMO_HEADING}</p>
-            <p className="text-base text-foreground leading-relaxed text-pretty">{PROMO_OVER_2000}</p>
-          </div>
-        </div>
       </div>
 
       <div className="border border-border bg-white">

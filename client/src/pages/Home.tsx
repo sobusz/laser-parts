@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import PublicLayout from "@/components/PublicLayout";
 import CatalogSearch from "@/components/CatalogSearch";
 import CommercialTerms from "@/components/CommercialTerms";
+import OrderGratis from "@/components/OrderGratis";
 import { catalogHref } from "@/lib/catalog-url";
 import { trpc } from "@/lib/trpc";
 import {
@@ -129,7 +130,8 @@ export default function Home() {
       </section>
 
       <section className="bg-background pb-14 lg:pb-16">
-        <div className="container">
+        <div className="container space-y-10">
+          <OrderGratis />
           <CommercialTerms />
         </div>
       </section>
