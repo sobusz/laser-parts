@@ -7,6 +7,7 @@ import superjson from "superjson";
 import App from "./App";
 import { InquiryProvider } from "./contexts/InquiryContext";
 import { getLoginUrl } from "./const";
+import "./index.css";
 
 const queryClient = new QueryClient();
 
