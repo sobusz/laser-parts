@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Link } from "wouter";
-import { Phone, Mail, MapPin, Clock, ChevronRight, Send } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, Send, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import PublicLayout from "@/components/PublicLayout";
+import PageHeader from "@/components/PageHeader";
 import { trpc } from "@/lib/trpc";
 
 export default function Contact() {
@@ -47,174 +47,90 @@ export default function Contact() {
 
   return (
     <PublicLayout>
-      {/* Page header */}
-      <div className="bg-muted/30 border-b border-border">
-        <div className="container py-8">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-            <Link href="/" className="hover:text-foreground transition-colors">Strona główna</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-foreground font-medium">Kontakt</span>
-          </nav>
-          <h1 className="text-3xl font-bold">Kontakt</h1>
-          <p className="text-muted-foreground mt-1">Skontaktuj się z nami – odpowiadamy szybko</p>
-        </div>
-      </div>
+      <PageHeader
+        crumbs={[{ label: "Strona główna", href: "/" }, { label: "Kontakt" }]}
+        title="Kontakt"
+        description="Zamówienia i wyceny: zamowienia@laser-parts.pl"
+      />
 
+      <div className="tech-grid">
       <div className="container py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Contact info */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="space-y-6">
-            <div>
-              <h2 className="font-bold text-xl mb-4">Dane kontaktowe</h2>
-              <div className="space-y-4">
-                {[
-                  {
-                    icon: Phone,
-                    label: "Telefon",
-                    value: "+48 691 732 408",
-                    href: "tel:+48691732408",
-                  },
-                  {
-                    icon: Mail,
-                    label: "E-mail",
-                    value: "biuro@laser-parts.pl",
-                    href: "mailto:biuro@laser-parts.pl",
-                  },
-                  {
-                    icon: MapPin,
-                    label: "Adres",
-                    value: "ul. Przykładowa 1\n00-000 Warszawa",
-                    href: null,
-                  },
-                  {
-                    icon: Clock,
-                    label: "Godziny pracy",
-                    value: "Pon–Pt: 8:00–16:00",
-                    href: null,
-                  },
-                ].map(({ icon: Icon, label, value, href }) => (
-                  <div key={label} className="flex gap-3">
-                    <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                      <Icon className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">
-                        {label}
-                      </p>
-                      {href ? (
-                        <a href={href} className="text-sm font-medium hover:text-primary transition-colors">
-                          {value}
-                        </a>
-                      ) : (
-                        <p className="text-sm font-medium whitespace-pre-line">{value}</p>
-                      )}
-                    </div>
+            <div className="space-y-4">
+              {[
+                { icon: Phone, label: "Telefon", value: "+48 691 732 408 (Anna)\n+48 501 676 186 (Jacek)\n+48 601 225 592 (Tomasz)", href: "tel:+48691732408" },
+                { icon: Mail, label: "E-mail", value: "laser-parts@laser-parts.pl\nzamowienia@laser-parts.pl", href: "mailto:zamowienia@laser-parts.pl" },
+                { icon: Building2, label: "Siedziba", value: "ul. Dworcowa 20/22\n87-630 Skępe", href: null },
+                { icon: MapPin, label: "Magazyn", value: "ul. Bławatna 10M\n55-095 Mirków", href: null },
+                { icon: Clock, label: "Godziny", value: "Pon–Pt: 8:00–16:00", href: null },
+              ].map(({ icon: Icon, label, value, href }) => (
+                <div key={label} className="flex gap-3">
+                    <div className="w-9 h-9 bg-secondary text-white flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="w-4 h-4" />
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
+                    {href ? (
+                      <a href={href} className="text-sm font-medium whitespace-pre-line hover:text-primary">{value}</a>
+                    ) : (
+                      <p className="text-sm font-medium whitespace-pre-line">{value}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div className="bg-muted/30 rounded-xl border border-border p-5">
-              <h3 className="font-semibold mb-2">Szybka realizacja</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Zamówienia na produkty z oferty podstawowej realizujemy w dniu złożenia zamówienia.
-                Wysyłka przez Pocztę Polską, DHL lub inną firmę kurierską.
-              </p>
-            </div>
-
-            <div className="bg-muted/30 rounded-xl border border-border p-5">
-              <h3 className="font-semibold mb-2">Dane firmy</h3>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p className="font-medium text-foreground">Laser Parts</p>
-                <p>NIP: 000-000-00-00</p>
-                <p>REGON: 000000000</p>
-              </div>
+            <div className="bg-white border border-border p-5 text-sm">
+              <p className="eyebrow text-muted-foreground mb-3">Dane firmy</p>
+              <p>LASER PARTS</p>
+              <p>NIP: 893-104-80-94</p>
+              <p>REGON: 340043718</p>
+              <p className="mt-2 font-mono text-xs">PKOBP S.A. 65 1440 1185 0000 0000 0400 4892</p>
             </div>
           </div>
 
-          {/* Contact form */}
           <div className="lg:col-span-2">
             {sent ? (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Send className="w-6 h-6 text-green-600" />
-                </div>
-                <h2 className="text-xl font-bold text-green-800 mb-2">Wiadomość wysłana!</h2>
-                <p className="text-green-700 mb-4">
-                  Dziękujemy za kontakt. Odpowiemy na Twoje pytanie najszybciej jak to możliwe.
-                </p>
-                <Button variant="outline" onClick={() => setSent(false)}>
-                  Wyślij kolejną wiadomość
-                </Button>
+              <div className="border border-border bg-white p-8 text-center">
+                <h2 className="text-xl font-bold mb-2">Wiadomość wysłana</h2>
+                <p className="text-muted-foreground mb-4">Odpowiemy najszybciej jak to możliwe.</p>
+                <Button variant="outline" onClick={() => setSent(false)}>Wyślij kolejną</Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-border p-6">
-                <h2 className="font-bold text-xl mb-6">Wyślij wiadomość</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                  <div>
+              <form onSubmit={handleSubmit} className="bg-white border border-border p-6 lg:p-8">
+                <div className="h-1 w-12 bg-primary mb-5" />
+                <h2 className="font-semibold text-xl mb-2">Formularz kontaktowy</h2>
+                <p className="text-sm text-muted-foreground mb-6">Pola oznaczone gwiazdką (*) są wymagane.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                  <div className="space-y-1.5">
                     <Label htmlFor="name">Imię i nazwisko *</Label>
-                    <Input
-                      id="name"
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="Jan Kowalski"
-                      className={errors.name ? "border-destructive" : ""}
-                    />
-                    {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
+                    <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} aria-invalid={!!errors.name} aria-describedby={errors.name ? "name-error" : undefined} className={errors.name ? "border-destructive" : ""} />
+                    {errors.name && <p id="name-error" className="text-sm font-medium text-destructive">{errors.name}</p>}
                   </div>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="email">E-mail *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      placeholder="jan@firma.pl"
-                      className={errors.email ? "border-destructive" : ""}
-                    />
-                    {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+                    <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} aria-invalid={!!errors.email} aria-describedby={errors.email ? "email-error" : undefined} className={errors.email ? "border-destructive" : ""} />
+                    {errors.email && <p id="email-error" className="text-sm font-medium text-destructive">{errors.email}</p>}
                   </div>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="phone">Telefon</Label>
-                    <Input
-                      id="phone"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      placeholder="+48 000 000 000"
-                    />
+                    <Input id="phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                   </div>
-                  <div>
+                  <div className="space-y-1.5">
                     <Label htmlFor="companyName">Nazwa firmy</Label>
-                    <Input
-                      id="companyName"
-                      value={form.companyName}
-                      onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-                      placeholder="Firma Sp. z o.o."
-                    />
+                    <Input id="companyName" value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} />
                   </div>
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-2 space-y-1.5">
                     <Label htmlFor="subject">Temat</Label>
-                    <Input
-                      id="subject"
-                      value={form.subject}
-                      onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                      placeholder="Zapytanie o produkt / wycena / inne"
-                    />
+                    <Input id="subject" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
                   </div>
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-2 space-y-1.5">
                     <Label htmlFor="message">Wiadomość *</Label>
-                    <Textarea
-                      id="message"
-                      value={form.message}
-                      onChange={(e) => setForm({ ...form, message: e.target.value })}
-                      placeholder="Opisz czego potrzebujesz. Podaj model maszyny i numer referencyjny części, jeśli to możliwe."
-                      rows={5}
-                      className={errors.message ? "border-destructive" : ""}
-                    />
-                    {errors.message && <p className="text-xs text-destructive mt-1">{errors.message}</p>}
+                    <Textarea id="message" rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} aria-invalid={!!errors.message} aria-describedby={errors.message ? "message-error" : undefined} className={`text-base ${errors.message ? "border-destructive" : ""}`} placeholder="Model maszyny i numer referencyjny części, jeśli to możliwe." />
+                    {errors.message && <p id="message-error" className="text-sm font-medium text-destructive">{errors.message}</p>}
                   </div>
                 </div>
-                <Button type="submit" className="w-full gap-2" disabled={sendMessage.isPending}>
+                <Button type="submit" className="w-full gap-2 h-12 text-base" disabled={sendMessage.isPending}>
                   <Send className="w-4 h-4" />
                   {sendMessage.isPending ? "Wysyłanie..." : "Wyślij wiadomość"}
                 </Button>
@@ -222,6 +138,7 @@ export default function Contact() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </PublicLayout>
   );

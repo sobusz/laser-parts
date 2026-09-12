@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
-import Stripe from "stripe";
-import { getStripe } from "./stripe";
+import { sdk } from "./_core/sdk";
+import { verifyPassword } from "./password";
 import {
   getCategories,
   getCategoryBySlug,
@@ -20,19 +20,40 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  createOrder,
-  getOrders,
-  getOrderByNumber,
-  getOrderById,
-  getOrderItems,
-  updateOrderStatus,
+  createInquiry,
+  getInquiries,
+  getInquiryById,
+  getInquiryItems,
+  updateInquiryStatus,
   createContactMessage,
   getContactMessages,
   markContactMessageRead,
+  getUserByEmail,
+  getArticles,
+  getArticleBySlug,
+  createArticle,
+  updateArticle,
+  deleteArticle,
+  getUsedMachines,
+  createUsedMachine,
+  updateUsedMachine,
+  deleteUsedMachine,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
 
-// ─── Admin guard ──────────────────────────────────────────────────────────────
+/**
+ * The inquiry or message is already persisted by the time the owner is notified,
+ * so an unconfigured or unreachable notification service must not turn a
+ * successful submission into an error for the customer.
+ */
+async function notifyOwnerSafely(payload: { title: string; content: string }) {
+  try {
+    await notifyOwner(payload);
+  } catch (error) {
+    console.warn("[Notification] Nie udało się powiadomić właściciela:", error);
+  }
+}
+
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
@@ -40,14 +61,27 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
-// ─── Categories router ────────────────────────────────────────────────────────
+const productFields = {
+  categoryId: z.number(),
+  name: z.string().min(1),
+  slug: z.string().min(1),
+  referenceNumber: z.string().optional().nullable(),
+  orderNumber: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  specifications: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
+  sketchUrl: z.string().optional().nullable(),
+  groupName: z.string().optional().nullable(),
+  price: z.string().optional().nullable(),
+  unit: z.string().optional(),
+  inStock: z.boolean().optional(),
+  featured: z.boolean().optional(),
+  sortOrder: z.number().optional(),
+};
+
 const categoriesRouter = router({
   list: publicProcedure.query(() => getCategories()),
-
-  bySlug: publicProcedure
-    .input(z.object({ slug: z.string() }))
-    .query(({ input }) => getCategoryBySlug(input.slug)),
-
+  bySlug: publicProcedure.input(z.object({ slug: z.string() })).query(({ input }) => getCategoryBySlug(input.slug)),
   create: adminProcedure
     .input(
       z.object({
@@ -59,7 +93,6 @@ const categoriesRouter = router({
       })
     )
     .mutation(({ input }) => createCategory(input)),
-
   update: adminProcedure
     .input(
       z.object({
@@ -75,54 +108,26 @@ const categoriesRouter = router({
       const { id, ...data } = input;
       return updateCategory(id, data);
     }),
-
-  delete: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteCategory(input.id)),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => deleteCategory(input.id)),
 });
 
-// ─── Products router ──────────────────────────────────────────────────────────
 const productsRouter = router({
   list: publicProcedure
     .input(
-      z.object({
-        categorySlug: z.string().optional(),
-        search: z.string().optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
-      }).optional()
+      z
+        .object({
+          categorySlug: z.string().optional(),
+          search: z.string().optional(),
+          limit: z.number().optional(),
+          offset: z.number().optional(),
+        })
+        .optional()
     )
     .query(({ input }) => getProducts(input)),
-
   featured: publicProcedure.query(() => getFeaturedProducts()),
-
-  bySlug: publicProcedure
-    .input(z.object({ slug: z.string() }))
-    .query(({ input }) => getProductBySlug(input.slug)),
-
-  byId: publicProcedure
-    .input(z.object({ id: z.number() }))
-    .query(({ input }) => getProductById(input.id)),
-
-  create: adminProcedure
-    .input(
-      z.object({
-        categoryId: z.number(),
-        name: z.string().min(1),
-        slug: z.string().min(1),
-        referenceNumber: z.string().optional(),
-        description: z.string().optional(),
-        specifications: z.string().optional(),
-        imageUrl: z.string().optional(),
-        price: z.string().optional(),
-        unit: z.string().optional(),
-        inStock: z.boolean().optional(),
-        featured: z.boolean().optional(),
-        sortOrder: z.number().optional(),
-      })
-    )
-    .mutation(({ input }) => createProduct(input as any)),
-
+  bySlug: publicProcedure.input(z.object({ slug: z.string() })).query(({ input }) => getProductBySlug(input.slug)),
+  byId: publicProcedure.input(z.object({ id: z.number() })).query(({ input }) => getProductById(input.id)),
+  create: adminProcedure.input(z.object(productFields)).mutation(({ input }) => createProduct(input as any)),
   update: adminProcedure
     .input(
       z.object({
@@ -130,11 +135,14 @@ const productsRouter = router({
         categoryId: z.number().optional(),
         name: z.string().min(1).optional(),
         slug: z.string().min(1).optional(),
-        referenceNumber: z.string().optional(),
-        description: z.string().optional(),
-        specifications: z.string().optional(),
-        imageUrl: z.string().optional(),
-        price: z.string().optional(),
+        referenceNumber: z.string().optional().nullable(),
+        orderNumber: z.string().optional().nullable(),
+        description: z.string().optional().nullable(),
+        specifications: z.string().optional().nullable(),
+        imageUrl: z.string().optional().nullable(),
+        sketchUrl: z.string().optional().nullable(),
+        groupName: z.string().optional().nullable(),
+        price: z.string().optional().nullable(),
         unit: z.string().optional(),
         inStock: z.boolean().optional(),
         featured: z.boolean().optional(),
@@ -145,107 +153,63 @@ const productsRouter = router({
       const { id, ...data } = input;
       return updateProduct(id, data as any);
     }),
-
-  delete: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteProduct(input.id)),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => deleteProduct(input.id)),
 });
 
-// ─── Orders router ────────────────────────────────────────────────────────────
-const ordersRouter = router({
+const inquiriesRouter = router({
   create: publicProcedure
     .input(
       z.object({
         companyName: z.string().min(1),
-        nip: z.string().min(1),
+        nip: z.string().optional(),
         contactName: z.string().min(1),
         contactEmail: z.string().email(),
         contactPhone: z.string().optional(),
-        addressStreet: z.string().min(1),
-        addressCity: z.string().min(1),
-        addressPostal: z.string().min(1),
         notes: z.string().optional(),
-        items: z.array(
-          z.object({
-            productId: z.number(),
-            productName: z.string(),
-            referenceNumber: z.string().optional(),
-            quantity: z.number().min(1),
-            unitPrice: z.string(),
-            totalPrice: z.string(),
-          })
-        ),
-        totalAmount: z.string(),
+        items: z
+          .array(
+            z.object({
+              productId: z.number().nullable().optional(),
+              productName: z.string().min(1),
+              referenceNumber: z.string().optional().nullable(),
+              quantity: z.number().min(1),
+              note: z.string().optional().nullable(),
+            })
+          )
+          .min(1),
       })
     )
     .mutation(async ({ input }) => {
-      const orderNumber = `LP-${Date.now()}-${nanoid(6).toUpperCase()}`;
-      const { items, ...orderData } = input;
-      const order = await createOrder(
-        { ...orderData, orderNumber, status: "pending" },
+      const inquiryNumber = `ZP-${Date.now()}-${nanoid(5).toUpperCase()}`;
+      const { items, ...rest } = input;
+      const inquiry = await createInquiry(
+        { ...rest, inquiryNumber, status: "new" },
         items.map((item) => ({
-          ...item,
-          orderId: 0, // will be replaced in createOrder
+          productId: item.productId ?? null,
+          productName: item.productName,
           referenceNumber: item.referenceNumber ?? null,
+          quantity: item.quantity,
+          note: item.note ?? null,
         }))
       );
-      await notifyOwner({
-        title: `Nowe zamówienie ${orderNumber}`,
-        content: `Zamówienie od ${orderData.companyName} (${orderData.contactEmail}) na kwotę ${orderData.totalAmount} zł.`,
+      await notifyOwnerSafely({
+        title: `Nowe zapytanie ofertowe ${inquiryNumber}`,
+        content: `Od: ${rest.companyName} (${rest.contactEmail})\nPozycji: ${items.length}`,
       });
-      return order;
+      return inquiry;
     }),
-
-  byNumber: publicProcedure
-    .input(z.object({ orderNumber: z.string() }))
-    .query(async ({ input }) => {
-      const order = await getOrderByNumber(input.orderNumber);
-      if (!order) throw new TRPCError({ code: "NOT_FOUND" });
-      const items = await getOrderItems(order.id);
-      return { ...order, items };
-    }),
-
-  list: adminProcedure.query(() => getOrders()),
-
-  detail: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
-      const order = await getOrderById(input.id);
-      if (!order) throw new TRPCError({ code: "NOT_FOUND" });
-      const items = await getOrderItems(order.id);
-      return { ...order, items };
-    }),
-
+  list: adminProcedure.query(() => getInquiries()),
+  detail: adminProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+    const inquiry = await getInquiryById(input.id);
+    if (!inquiry) throw new TRPCError({ code: "NOT_FOUND" });
+    const items = await getInquiryItems(inquiry.id);
+    return { ...inquiry, items };
+  }),
   updateStatus: adminProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        status: z.enum(["pending", "paid", "processing", "shipped", "delivered", "cancelled"]),
-      })
-    )
-    .mutation(({ input }) => updateOrderStatus(input.id, input.status)),
-
-  // Called by Stripe webhook to mark order as paid
-  markPaid: publicProcedure
-    .input(
-      z.object({
-        orderNumber: z.string(),
-        stripeSessionId: z.string(),
-        stripePaymentIntentId: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const order = await getOrderByNumber(input.orderNumber);
-      if (!order) throw new TRPCError({ code: "NOT_FOUND" });
-      await updateOrderStatus(order.id, "paid", {
-        sessionId: input.stripeSessionId,
-        paymentIntentId: input.stripePaymentIntentId,
-      });
-      return { success: true };
-    }),
+    .input(z.object({ id: z.number(), status: z.enum(["new", "in_progress", "closed"]) }))
+    .mutation(({ input }) => updateInquiryStatus(input.id, input.status)),
 });
 
-// ─── Contact router ───────────────────────────────────────────────────────────
 const contactRouter = router({
   send: publicProcedure
     .input(
@@ -260,71 +224,97 @@ const contactRouter = router({
     )
     .mutation(async ({ input }) => {
       await createContactMessage(input);
-      await notifyOwner({
+      await notifyOwnerSafely({
         title: `Nowa wiadomość kontaktowa od ${input.name}`,
         content: `Od: ${input.email}\nFirma: ${input.companyName ?? "-"}\nTemat: ${input.subject ?? "-"}\n\n${input.message}`,
       });
       return { success: true };
     }),
-
   list: adminProcedure.query(() => getContactMessages()),
-
-  markRead: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => markContactMessageRead(input.id)),
+  markRead: adminProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => markContactMessageRead(input.id)),
 });
 
-// ─── Stripe router ──────────────────────────────────────────────────────────
-const stripeRouter = router({
-  createCheckoutSession: publicProcedure
+const articleSection = z.enum(["technologia", "optyka", "nowosc", "oprogramowanie", "strona"]);
+
+const articlesRouter = router({
+  list: publicProcedure
+    .input(z.object({ section: articleSection.optional(), publishedOnly: z.boolean().optional() }).optional())
+    .query(({ input }) => getArticles({ ...input, publishedOnly: input?.publishedOnly ?? true })),
+  adminList: adminProcedure.query(() => getArticles()),
+  bySlug: publicProcedure.input(z.object({ slug: z.string() })).query(({ input }) => getArticleBySlug(input.slug)),
+  bySection: publicProcedure.input(z.object({ section: articleSection })).query(async ({ input }) => {
+    const list = await getArticles({ section: input.section, publishedOnly: true });
+    return list;
+  }),
+  create: adminProcedure
     .input(
       z.object({
-        orderNumber: z.string(),
-        customerEmail: z.string().email(),
-        customerName: z.string().optional(),
-        items: z.array(
-          z.object({
-            name: z.string(),
-            referenceNumber: z.string().optional(),
-            quantity: z.number().min(1),
-            unitPrice: z.number().min(1), // in grosze
-          })
-        ),
-        origin: z.string(),
+        slug: z.string().min(1),
+        title: z.string().min(1),
+        excerpt: z.string().optional().nullable(),
+        body: z.string().min(1),
+        section: articleSection,
+        published: z.boolean().optional(),
+        sortOrder: z.number().optional(),
       })
     )
-    .mutation(async ({ input }) => {
-      const stripe = getStripe();
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        mode: "payment",
-        customer_email: input.customerEmail,
-        client_reference_id: input.orderNumber,
-        metadata: {
-          orderNumber: input.orderNumber,
-          customerName: input.customerName ?? "",
-          customerEmail: input.customerEmail,
-        },
-        line_items: input.items.map((item) => ({
-          price_data: {
-            currency: "pln",
-            product_data: {
-              name: item.name,
-              description: item.referenceNumber ? `Ref: ${item.referenceNumber}` : undefined,
-            },
-            unit_amount: item.unitPrice,
-          },
-          quantity: item.quantity,
-        })),
-        allow_promotion_codes: true,
-        success_url: `${input.origin}/zamowienie-potwierdzenie?nr=${input.orderNumber}&paid=true`,
-        cancel_url: `${input.origin}/zamowienie?cancelled=true`,
-      });
-      return { url: session.url! };
+    .mutation(({ input }) => createArticle(input)),
+  update: adminProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        slug: z.string().min(1).optional(),
+        title: z.string().min(1).optional(),
+        excerpt: z.string().optional().nullable(),
+        body: z.string().optional(),
+        section: articleSection.optional(),
+        published: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      })
+    )
+    .mutation(({ input }) => {
+      const { id, ...data } = input;
+      return updateArticle(id, data);
     }),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => deleteArticle(input.id)),
 });
 
-// ─── App router ───────────────────────────────────────────────────────────────
+const machinesRouter = router({
+  list: publicProcedure.query(() => getUsedMachines(true)),
+  adminList: adminProcedure.query(() => getUsedMachines(false)),
+  create: adminProcedure
+    .input(
+      z.object({
+        title: z.string().min(1),
+        slug: z.string().min(1),
+        description: z.string().optional().nullable(),
+        imageUrl: z.string().optional().nullable(),
+        contactNote: z.string().optional().nullable(),
+        active: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      })
+    )
+    .mutation(({ input }) => createUsedMachine(input)),
+  update: adminProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        title: z.string().min(1).optional(),
+        slug: z.string().min(1).optional(),
+        description: z.string().optional().nullable(),
+        imageUrl: z.string().optional().nullable(),
+        contactNote: z.string().optional().nullable(),
+        active: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      })
+    )
+    .mutation(({ input }) => {
+      const { id, ...data } = input;
+      return updateUsedMachine(id, data);
+    }),
+  delete: adminProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => deleteUsedMachine(input.id)),
+});
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -334,13 +324,29 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await getUserByEmail(input.email);
+        if (!user?.passwordHash) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Nieprawidłowy e-mail lub hasło" });
+        }
+        const ok = await verifyPassword(input.password, user.passwordHash);
+        if (!ok) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Nieprawidłowy e-mail lub hasło" });
+        }
+        const token = await sdk.createSessionToken(user.openId, { name: user.name ?? "" });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        return { success: true as const };
+      }),
   }),
   categories: categoriesRouter,
   products: productsRouter,
-  orders: ordersRouter,
+  inquiries: inquiriesRouter,
   contact: contactRouter,
-  stripe: stripeRouter,
+  articles: articlesRouter,
+  machines: machinesRouter,
 });
 
 export type AppRouter = typeof appRouter;
-

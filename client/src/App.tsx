@@ -7,13 +7,13 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Catalog from "./pages/Catalog";
 import ProductDetail from "./pages/ProductDetail";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import Technology from "./pages/Technology";
-import Software from "./pages/Software";
+import Inquiry from "./pages/Inquiry";
+import ArticlePage from "./pages/Article";
 import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
+import Login from "./pages/Login";
+import Privacy from "./pages/Privacy";
+import Rodo from "./pages/Rodo";
 
 function Router() {
   return (
@@ -21,12 +21,16 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/oferta" component={Catalog} />
       <Route path="/produkt/:slug" component={ProductDetail} />
-      <Route path="/koszyk" component={Cart} />
-      <Route path="/zamowienie" component={Checkout} />
-      <Route path="/zamowienie-potwierdzenie" component={OrderConfirmation} />
-      <Route path="/technologia" component={Technology} />
-      <Route path="/oprogramowanie" component={Software} />
+      <Route path="/zapytanie" component={Inquiry} />
+      <Route path="/optyka">{() => <ArticlePage section="optyka" />}</Route>
+      <Route path="/nowosc">{() => <ArticlePage section="nowosc" />}</Route>
+      <Route path="/oprogramowanie">{() => <ArticlePage section="oprogramowanie" />}</Route>
+      <Route path="/technologia/:slug">{() => <ArticlePage section="technologia" />}</Route>
+      <Route path="/technologia">{() => <ArticlePage section="technologia" />}</Route>
       <Route path="/kontakt" component={Contact} />
+      <Route path="/polityka-prywatnosci" component={Privacy} />
+      <Route path="/klauzula-rodo" component={Rodo} />
+      <Route path="/admin/login" component={Login} />
       <Route path="/admin" component={Admin} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

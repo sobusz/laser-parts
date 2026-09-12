@@ -1,21 +1,23 @@
-import { eq, desc, and, like, or, sql } from "drizzle-orm";
+import { eq, desc, and, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
   users,
   categories,
   products,
-  orders,
-  orderItems,
   contactMessages,
-  type Category,
-  type Product,
+  inquiries,
+  inquiryItems,
+  articles,
+  usedMachines,
   type InsertProduct,
   type InsertCategory,
-  type Order,
-  type InsertOrder,
-  type InsertOrderItem,
   type InsertContactMessage,
+  type InsertInquiry,
+  type InsertInquiryItem,
+  type InsertArticle,
+  type InsertUsedMachine,
+  type Inquiry,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -33,7 +35,6 @@ export async function getDb() {
   return _db;
 }
 
-// ─── Users ────────────────────────────────────────────────────────────────────
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
@@ -41,7 +42,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
   const values: InsertUser = { openId: user.openId };
   const updateSet: Record<string, unknown> = {};
-  const textFields = ["name", "email", "loginMethod"] as const;
+  const textFields = ["name", "email", "loginMethod", "passwordHash"] as const;
 
   for (const field of textFields) {
     const value = user[field];
@@ -76,7 +77,13 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// ─── Categories ───────────────────────────────────────────────────────────────
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result[0];
+}
+
 export async function getCategories() {
   const db = await getDb();
   if (!db) return [];
@@ -108,7 +115,6 @@ export async function deleteCategory(id: number) {
   await db.delete(categories).where(eq(categories.id, id));
 }
 
-// ─── Products ─────────────────────────────────────────────────────────────────
 export async function getProducts(opts?: {
   categorySlug?: string;
   search?: string;
@@ -131,7 +137,8 @@ export async function getProducts(opts?: {
     conditions.push(
       or(
         like(products.name, `%${opts.search}%`),
-        like(products.referenceNumber, `%${opts.search}%`)
+        like(products.referenceNumber, `%${opts.search}%`),
+        like(products.orderNumber, `%${opts.search}%`)
       )
     );
   }
@@ -140,15 +147,13 @@ export async function getProducts(opts?: {
     conditions.push(eq(products.featured, opts.featured));
   }
 
-  const query = db
+  return db
     .select()
     .from(products)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(products.sortOrder, products.name)
-    .limit(opts?.limit ?? 100)
+    .orderBy(products.sortOrder, products.groupName, products.name)
+    .limit(opts?.limit ?? 500)
     .offset(opts?.offset ?? 0);
-
-  return query;
 }
 
 export async function getFeaturedProducts() {
@@ -187,69 +192,47 @@ export async function deleteProduct(id: number) {
   await db.delete(products).where(eq(products.id, id));
 }
 
-// ─── Orders ───────────────────────────────────────────────────────────────────
-export async function createOrder(
-  orderData: InsertOrder,
-  items: InsertOrderItem[]
-) {
+export async function createInquiry(data: InsertInquiry, items: Omit<InsertInquiryItem, "inquiryId">[]) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.insert(orders).values(orderData);
+  await db.insert(inquiries).values(data);
   const [created] = await db
     .select()
-    .from(orders)
-    .where(eq(orders.orderNumber, orderData.orderNumber))
+    .from(inquiries)
+    .where(eq(inquiries.inquiryNumber, data.inquiryNumber))
     .limit(1);
-  if (!created) throw new Error("Order creation failed");
-  const itemsWithOrderId = items.map((item) => ({ ...item, orderId: created.id }));
-  await db.insert(orderItems).values(itemsWithOrderId);
+  if (!created) throw new Error("Inquiry creation failed");
+  if (items.length > 0) {
+    await db.insert(inquiryItems).values(items.map((item) => ({ ...item, inquiryId: created.id })));
+  }
   return created;
 }
 
-export async function getOrders() {
+export async function getInquiries() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(orders).orderBy(desc(orders.createdAt));
+  return db.select().from(inquiries).orderBy(desc(inquiries.createdAt));
 }
 
-export async function getOrderByNumber(orderNumber: string) {
+export async function getInquiryById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
+  const result = await db.select().from(inquiries).where(eq(inquiries.id, id)).limit(1);
   return result[0];
 }
 
-export async function getOrderById(id: number) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
-  return result[0];
-}
-
-export async function getOrderItems(orderId: number) {
+export async function getInquiryItems(inquiryId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  return db.select().from(inquiryItems).where(eq(inquiryItems.inquiryId, inquiryId));
 }
 
-export async function updateOrderStatus(
-  id: number,
-  status: Order["status"],
-  stripeData?: { paymentIntentId?: string; sessionId?: string }
-) {
+export async function updateInquiryStatus(id: number, status: Inquiry["status"]) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db
-    .update(orders)
-    .set({
-      status,
-      ...(stripeData?.paymentIntentId ? { stripePaymentIntentId: stripeData.paymentIntentId } : {}),
-      ...(stripeData?.sessionId ? { stripeSessionId: stripeData.sessionId } : {}),
-    })
-    .where(eq(orders.id, id));
+  await db.update(inquiries).set({ status }).where(eq(inquiries.id, id));
 }
 
-// ─── Contact Messages ─────────────────────────────────────────────────────────
 export async function createContactMessage(data: InsertContactMessage) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
@@ -266,4 +249,77 @@ export async function markContactMessageRead(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(contactMessages).set({ read: true }).where(eq(contactMessages.id, id));
+}
+
+export async function getArticles(opts?: { section?: InsertArticle["section"]; publishedOnly?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (opts?.section) conditions.push(eq(articles.section, opts.section));
+  if (opts?.publishedOnly) conditions.push(eq(articles.published, true));
+  return db
+    .select()
+    .from(articles)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(articles.sortOrder, articles.title);
+}
+
+export async function getArticleBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(articles).where(eq(articles.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function createArticle(data: InsertArticle) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(articles).values(data);
+}
+
+export async function updateArticle(id: number, data: Partial<InsertArticle>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(articles).set(data).where(eq(articles.id, id));
+}
+
+export async function deleteArticle(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(articles).where(eq(articles.id, id));
+}
+
+export async function getUsedMachines(activeOnly = false) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(usedMachines)
+    .where(activeOnly ? eq(usedMachines.active, true) : undefined)
+    .orderBy(usedMachines.sortOrder, usedMachines.title);
+}
+
+export async function getUsedMachineBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(usedMachines).where(eq(usedMachines.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function createUsedMachine(data: InsertUsedMachine) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(usedMachines).values(data);
+}
+
+export async function updateUsedMachine(id: number, data: Partial<InsertUsedMachine>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(usedMachines).set(data).where(eq(usedMachines.id, id));
+}
+
+export async function deleteUsedMachine(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(usedMachines).where(eq(usedMachines.id, id));
 }

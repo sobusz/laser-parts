@@ -15,6 +15,13 @@
       "when": 1774044825168,
       "tag": "0001_dazzling_blacklash",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774045000000,
+      "tag": "0002_b2b_catalog",
+      "breakpoints": true
     }
   ]
 }

@@ -101,6 +101,9 @@ jspm_packages/
 tmp/
 temp/
 
+# Superdesign temporary HTML templates
+.superdesign/tmp/
+
 # Database
 *.db
 *.sqlite

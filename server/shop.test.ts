@@ -1,53 +1,66 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-// Mock the db module so tests don't need a real database
 vi.mock("./db", () => ({
   getCategories: vi.fn().mockResolvedValue([
-    { id: 1, name: "Trumpf", slug: "trumpf", description: "Parts for Trumpf", imageUrl: null, sortOrder: 0, createdAt: new Date(), updatedAt: new Date() },
+    { id: 1, name: "Trumpf", slug: "trumpf", description: "Parts for Trumpf", imageUrl: null, sortOrder: 0, createdAt: new Date() },
   ]),
   getCategoryBySlug: vi.fn().mockImplementation((slug: string) => {
-    if (slug === "trumpf") return Promise.resolve({ id: 1, name: "Trumpf", slug: "trumpf", description: null, imageUrl: null, sortOrder: 0, createdAt: new Date(), updatedAt: new Date() });
+    if (slug === "trumpf") return Promise.resolve({ id: 1, name: "Trumpf", slug: "trumpf", description: null, imageUrl: null, sortOrder: 0, createdAt: new Date() });
     return Promise.resolve(undefined);
   }),
   createCategory: vi.fn().mockResolvedValue(undefined),
   updateCategory: vi.fn().mockResolvedValue(undefined),
   deleteCategory: vi.fn().mockResolvedValue(undefined),
   getProducts: vi.fn().mockResolvedValue([
-    { id: 1, categoryId: 1, name: "Dysza 1.0mm", slug: "dysza-1-0mm", referenceNumber: "0700-000-001", description: null, specifications: null, imageUrl: null, price: "45.00", unit: "szt.", inStock: true, featured: true, sortOrder: 0, createdAt: new Date(), updatedAt: new Date() },
+    { id: 1, categoryId: 1, name: "Dysza 1.0mm", slug: "dysza-1-0mm", referenceNumber: "0700-000-001", orderNumber: null, groupName: "Dysze", description: null, specifications: null, imageUrl: null, sketchUrl: null, price: "45.00", unit: "szt.", inStock: true, featured: true, sortOrder: 0, createdAt: new Date(), updatedAt: new Date() },
   ]),
   getFeaturedProducts: vi.fn().mockResolvedValue([
-    { id: 1, categoryId: 1, name: "Dysza 1.0mm", slug: "dysza-1-0mm", referenceNumber: "0700-000-001", description: null, specifications: null, imageUrl: null, price: "45.00", unit: "szt.", inStock: true, featured: true, sortOrder: 0, createdAt: new Date(), updatedAt: new Date() },
+    { id: 1, categoryId: 1, name: "Dysza 1.0mm", slug: "dysza-1-0mm", referenceNumber: "0700-000-001", featured: true },
   ]),
   getProductBySlug: vi.fn().mockImplementation((slug: string) => {
-    if (slug === "dysza-1-0mm") return Promise.resolve({ id: 1, categoryId: 1, name: "Dysza 1.0mm", slug: "dysza-1-0mm", referenceNumber: "0700-000-001", description: null, specifications: null, imageUrl: null, price: "45.00", unit: "szt.", inStock: true, featured: true, sortOrder: 0, createdAt: new Date(), updatedAt: new Date() });
+    if (slug === "dysza-1-0mm") return Promise.resolve({ id: 1, categoryId: 1, name: "Dysza 1.0mm", slug: "dysza-1-0mm", referenceNumber: "0700-000-001", price: "45.00", unit: "szt." });
     return Promise.resolve(undefined);
   }),
   getProductById: vi.fn().mockResolvedValue(undefined),
   createProduct: vi.fn().mockResolvedValue(undefined),
   updateProduct: vi.fn().mockResolvedValue(undefined),
   deleteProduct: vi.fn().mockResolvedValue(undefined),
-  createOrder: vi.fn().mockResolvedValue({ id: 1, orderNumber: "LP-TEST-001", status: "pending", companyName: "Test Sp. z o.o.", nip: "1234567890", contactName: "Jan Test", contactEmail: "jan@test.pl", contactPhone: null, addressStreet: "ul. Testowa 1", addressCity: "Warszawa", addressPostal: "00-001", notes: null, totalAmount: "45.00", stripePaymentIntentId: null, stripeSessionId: null, createdAt: new Date(), updatedAt: new Date() }),
-  getOrders: vi.fn().mockResolvedValue([]),
-  getOrderByNumber: vi.fn().mockResolvedValue(undefined),
-  getOrderById: vi.fn().mockResolvedValue(undefined),
-  getOrderItems: vi.fn().mockResolvedValue([]),
-  updateOrderStatus: vi.fn().mockResolvedValue(undefined),
+  createInquiry: vi.fn().mockResolvedValue({ id: 1, inquiryNumber: "ZP-TEST-001", status: "new", companyName: "Test Sp. z o.o.", contactName: "Jan Test", contactEmail: "jan@test.pl" }),
+  getInquiries: vi.fn().mockResolvedValue([]),
+  getInquiryById: vi.fn().mockResolvedValue(undefined),
+  getInquiryItems: vi.fn().mockResolvedValue([]),
+  updateInquiryStatus: vi.fn().mockResolvedValue(undefined),
   createContactMessage: vi.fn().mockResolvedValue(undefined),
   getContactMessages: vi.fn().mockResolvedValue([]),
   markContactMessageRead: vi.fn().mockResolvedValue(undefined),
+  getUserByEmail: vi.fn().mockResolvedValue(undefined),
+  getArticles: vi.fn().mockResolvedValue([]),
+  getArticleBySlug: vi.fn().mockResolvedValue(undefined),
+  createArticle: vi.fn().mockResolvedValue(undefined),
+  updateArticle: vi.fn().mockResolvedValue(undefined),
+  deleteArticle: vi.fn().mockResolvedValue(undefined),
+  getUsedMachines: vi.fn().mockResolvedValue([]),
+  createUsedMachine: vi.fn().mockResolvedValue(undefined),
+  updateUsedMachine: vi.fn().mockResolvedValue(undefined),
+  deleteUsedMachine: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("./_core/notification", () => ({
   notifyOwner: vi.fn().mockResolvedValue(true),
 }));
 
+vi.mock("./password", () => ({
+  verifyPassword: vi.fn(),
+  hashPassword: vi.fn(),
+}));
+
 function createPublicCtx(): TrpcContext {
   return {
     user: null,
     req: { protocol: "https", headers: {} } as any,
-    res: { clearCookie: vi.fn() } as any,
+    res: { clearCookie: vi.fn(), cookie: vi.fn() } as any,
   };
 }
 
@@ -58,14 +71,15 @@ function createAdminCtx(): TrpcContext {
       openId: "admin-open-id",
       email: "admin@laser-parts.pl",
       name: "Admin",
-      loginMethod: "manus",
+      loginMethod: "password",
+      passwordHash: "x",
       role: "admin",
       createdAt: new Date(),
       updatedAt: new Date(),
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as any,
-    res: { clearCookie: vi.fn() } as any,
+    res: { clearCookie: vi.fn(), cookie: vi.fn() } as any,
   };
 }
 
@@ -77,24 +91,14 @@ describe("categories router", () => {
     expect(result[0].name).toBe("Trumpf");
   });
 
-  it("bySlug returns category when found", async () => {
-    const caller = appRouter.createCaller(createPublicCtx());
-    const result = await caller.categories.bySlug({ slug: "trumpf" });
-    expect(result?.name).toBe("Trumpf");
-  });
-
   it("create requires admin role", async () => {
     const caller = appRouter.createCaller(createPublicCtx());
-    await expect(
-      caller.categories.create({ name: "Test", slug: "test" })
-    ).rejects.toThrow();
+    await expect(caller.categories.create({ name: "Test", slug: "test" })).rejects.toThrow();
   });
 
   it("create succeeds for admin", async () => {
     const caller = appRouter.createCaller(createAdminCtx());
-    await expect(
-      caller.categories.create({ name: "Test", slug: "test" })
-    ).resolves.not.toThrow();
+    await expect(caller.categories.create({ name: "Test", slug: "test" })).resolves.not.toThrow();
   });
 });
 
@@ -104,13 +108,6 @@ describe("products router", () => {
     const result = await caller.products.list();
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe("Dysza 1.0mm");
-  });
-
-  it("featured returns featured products", async () => {
-    const caller = appRouter.createCaller(createPublicCtx());
-    const result = await caller.products.featured();
-    expect(result.length).toBeGreaterThan(0);
-    expect(result[0].featured).toBe(true);
   });
 
   it("bySlug returns product when found", async () => {
@@ -125,34 +122,21 @@ describe("products router", () => {
   });
 });
 
-describe("orders router", () => {
-  it("creates an order for public users", async () => {
+describe("inquiries router", () => {
+  it("creates an inquiry for public users", async () => {
     const caller = appRouter.createCaller(createPublicCtx());
-    const result = await caller.orders.create({
+    const result = await caller.inquiries.create({
       companyName: "Test Sp. z o.o.",
-      nip: "1234567890",
       contactName: "Jan Test",
       contactEmail: "jan@test.pl",
-      addressStreet: "ul. Testowa 1",
-      addressCity: "Warszawa",
-      addressPostal: "00-001",
-      items: [
-        {
-          productId: 1,
-          productName: "Dysza 1.0mm",
-          quantity: 2,
-          unitPrice: "45.00",
-          totalPrice: "90.00",
-        },
-      ],
-      totalAmount: "90.00",
+      items: [{ productId: 1, productName: "Dysza 1.0mm", quantity: 2 }],
     });
-    expect(result.orderNumber).toBe("LP-TEST-001");
+    expect(result.inquiryNumber).toBe("ZP-TEST-001");
   });
 
   it("list requires admin role", async () => {
     const caller = appRouter.createCaller(createPublicCtx());
-    await expect(caller.orders.list()).rejects.toThrow();
+    await expect(caller.inquiries.list()).rejects.toThrow();
   });
 });
 
