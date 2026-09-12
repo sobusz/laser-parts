@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import PublicLayout from "@/components/PublicLayout";
 import PageHeader from "@/components/PageHeader";
 import { useInquiry } from "@/contexts/InquiryContext";
+import { INQUIRY_INTRO } from "@shared/legacy-copy";
 import { trpc } from "@/lib/trpc";
 
 type FieldKey = "items" | "companyName" | "contactName" | "contactEmail";
@@ -82,8 +83,8 @@ export default function Inquiry() {
     <PublicLayout>
       <PageHeader
         crumbs={[{ label: "Strona główna", href: "/" }, { label: "Zapytanie ofertowe" }]}
-        title="Zapytanie ofertowe"
-        description="Bez płatności online. Otrzymacie Państwo wycenę e-mailem."
+        title="Zapytanie"
+        description={INQUIRY_INTRO}
       />
 
       <div className="tech-grid">
@@ -92,9 +93,11 @@ export default function Inquiry() {
           <div className="max-w-lg mx-auto bg-white border border-border p-8 text-center">
             <div className="h-1 w-12 bg-primary mx-auto mb-5" />
             <ClipboardList className="w-10 h-10 mx-auto mb-3" />
-            <h2 className="text-xl font-semibold mb-2">Zapytanie wysłane</h2>
+            <h2 className="text-xl font-semibold mb-2">Zapytanie zostało przyjęte</h2>
             <p className="text-muted-foreground mb-1">Numer sprawy: <span className="font-mono font-medium">{sentNumber}</span></p>
-            <p className="text-sm text-muted-foreground mb-6">Skontaktujemy się na podany adres e-mail.</p>
+            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+              Odpowiedź z ceną i terminem realizacji prześlemy na wskazany adres e-mail. W razie potrzeby skontaktujemy się telefonicznie.
+            </p>
             <Link href="/oferta"><Button>Wróć do oferty</Button></Link>
           </div>
         ) : (
@@ -106,7 +109,9 @@ export default function Inquiry() {
               ) : null}
               {items.length === 0 ? (
                 <div className="border border-border bg-white p-8 text-center text-muted-foreground">
-                  <p className="mb-4">Lista jest pusta. Dodaj części z katalogu.</p>
+                  <p className="mb-4 leading-relaxed max-w-md mx-auto">
+                    Lista zapytania jest pusta. Prosimy dodać pozycje z oferty (ikona przy nazwie części), a następnie przesłać zapytanie zbiorczo.
+                  </p>
                   <Link href="/oferta"><Button variant="outline">Otwórz ofertę</Button></Link>
                 </div>
               ) : (
@@ -135,7 +140,7 @@ export default function Inquiry() {
                           onChange={(e) => updateQuantity(index, Number(e.target.value))}
                         />
                         <Input
-                          placeholder="Uwaga do pozycji"
+                          placeholder="np. preferowany termin dostawy, inny przekrój"
                           className="h-8"
                           value={item.note ?? ""}
                           onChange={(e) => updateNote(index, e.target.value)}
@@ -150,7 +155,10 @@ export default function Inquiry() {
 
             <form onSubmit={handleSubmit} noValidate className="lg:col-span-2 bg-white border border-border p-6 space-y-3 self-start lg:sticky lg:top-20">
               <div className="h-1 w-12 bg-primary mb-4" />
-              <h2 className="font-semibold mb-2">Dane firmy</h2>
+              <h2 className="font-semibold mb-2">Dane do oferty</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                Do przygotowania oferty niezbędne są nazwa firmy oraz osoba kontaktowa. NIP i telefon przyspieszają wystawienie faktury oraz kontakt, nie są jednak wymagane.
+              </p>
               {errorKeys.length > 0 ? (
                 <div
                   ref={summaryRef}

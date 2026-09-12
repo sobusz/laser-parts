@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import PublicLayout from "@/components/PublicLayout";
 import PageHeader from "@/components/PageHeader";
+import { CONTACT_INTRO } from "@shared/legacy-copy";
 import { trpc } from "@/lib/trpc";
 
 export default function Contact() {
@@ -50,36 +51,51 @@ export default function Contact() {
       <PageHeader
         crumbs={[{ label: "Strona główna", href: "/" }, { label: "Kontakt" }]}
         title="Kontakt"
-        description="Zamówienia i wyceny: zamowienia@laser-parts.pl"
+        description={CONTACT_INTRO}
       />
 
       <div className="tech-grid">
       <div className="container py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="space-y-6">
-            <div className="space-y-4">
-              {[
-                { icon: Phone, label: "Telefon", value: "+48 691 732 408 (Anna)\n+48 501 676 186 (Jacek)\n+48 601 225 592 (Tomasz)", href: "tel:+48691732408" },
-                { icon: Mail, label: "E-mail", value: "laser-parts@laser-parts.pl\nzamowienia@laser-parts.pl", href: "mailto:zamowienia@laser-parts.pl" },
-                { icon: Building2, label: "Siedziba", value: "ul. Dworcowa 20/22\n87-630 Skępe", href: null },
-                { icon: MapPin, label: "Magazyn", value: "ul. Bławatna 10M\n55-095 Mirków", href: null },
-                { icon: Clock, label: "Godziny", value: "Pon–Pt: 8:00–16:00", href: null },
-              ].map(({ icon: Icon, label, value, href }) => (
-                <div key={label} className="flex gap-3">
-                    <div className="w-9 h-9 bg-secondary text-white flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
-                    {href ? (
-                      <a href={href} className="text-sm font-medium whitespace-pre-line hover:text-primary">{value}</a>
-                    ) : (
-                      <p className="text-sm font-medium whitespace-pre-line">{value}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <div className="w-9 h-9 bg-secondary text-white flex items-center justify-center shrink-0 mt-0.5">
+                <Phone className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Telefon</p>
+                <a href="tel:+48691732408" className="block text-sm font-medium hover:text-primary">+48 691 732 408 (Anna)</a>
+                <a href="tel:+48501676186" className="block text-sm font-medium hover:text-primary">+48 501 676 186 (Jacek)</a>
+                <a href="tel:+48601225592" className="block text-sm font-medium hover:text-primary">+48 601 225 592 (Tomasz)</a>
+              </div>
             </div>
+            <div className="flex gap-3">
+              <div className="w-9 h-9 bg-secondary text-white flex items-center justify-center shrink-0 mt-0.5">
+                <Mail className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">E-mail</p>
+                <a href="mailto:laser-parts@laser-parts.pl" className="block text-sm font-medium hover:text-primary">laser-parts@laser-parts.pl</a>
+                <a href="mailto:zamowienia@laser-parts.pl" className="block text-sm font-medium hover:text-primary">zamowienia@laser-parts.pl</a>
+              </div>
+            </div>
+            {[
+              { icon: Building2, label: "Siedziba", value: "ul. Dworcowa 20/22\n87-630 Skępe" },
+              { icon: MapPin, label: "Magazyn", value: "ul. Bławatna 10M\n55-095 Mirków" },
+              { icon: Clock, label: "Godziny", value: "Pon–Pt: 8:00–16:00" },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex gap-3">
+                <div className="w-9 h-9 bg-secondary text-white flex items-center justify-center shrink-0 mt-0.5">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
+                  <p className="text-sm font-medium whitespace-pre-line">{value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
             <div className="bg-white border border-border p-5 text-sm">
               <p className="eyebrow text-muted-foreground mb-3">Dane firmy</p>
               <p>LASER PARTS</p>
@@ -126,7 +142,7 @@ export default function Contact() {
                   </div>
                   <div className="sm:col-span-2 space-y-1.5">
                     <Label htmlFor="message">Wiadomość *</Label>
-                    <Textarea id="message" rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} aria-invalid={!!errors.message} aria-describedby={errors.message ? "message-error" : undefined} className={`text-base ${errors.message ? "border-destructive" : ""}`} placeholder="Model maszyny i numer referencyjny części, jeśli to możliwe." />
+                    <Textarea id="message" rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} aria-invalid={!!errors.message} aria-describedby={errors.message ? "message-error" : undefined} className={`text-base ${errors.message ? "border-destructive" : ""}`} placeholder="Prosimy o podanie modelu maszyny, numeru referencyjnego oraz wymaganej ilości." />
                     {errors.message && <p id="message-error" className="text-sm font-medium text-destructive">{errors.message}</p>}
                   </div>
                 </div>

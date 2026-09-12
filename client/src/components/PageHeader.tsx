@@ -33,9 +33,9 @@ export default function PageHeader({
         <div className="h-1 w-14 bg-primary mb-5" />
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div>
-            <h1 className="text-4xl lg:text-5xl font-semibold tracking-tight max-w-3xl text-white">{title}</h1>
+            <h1 className="text-4xl lg:text-5xl font-semibold tracking-tight max-w-3xl text-white text-balance">{title}</h1>
             {description && (
-              <div className="text-white/70 text-[17px] mt-4 max-w-2xl leading-relaxed">{description}</div>
+              <div className="text-white/75 text-[17px] mt-4 max-w-[42rem] leading-relaxed text-pretty">{description}</div>
             )}
           </div>
           {meta && (

@@ -14,8 +14,10 @@ export default function NotFound() {
           <BrandLockup inverted />
         </div>
         <p className="font-display text-7xl font-bold text-primary mb-3">404</p>
-        <h1 className="text-xl font-semibold mb-2">Nie znaleziono strony</h1>
-        <p className="text-white/70 mb-8">Adres nie istnieje albo treść została przeniesiona.</p>
+        <h1 className="text-xl font-semibold mb-2">Nie ma takiej strony</h1>
+        <p className="text-white/70 mb-8 leading-relaxed">
+          Adres jest nieaktualny albo treść została przeniesiona. Prosimy wrócić na stronę główną i skorzystać z oferty lub danych kontaktowych.
+        </p>
         <Button className="h-11 px-6" onClick={() => setLocation("/")}>
           Strona główna
         </Button>

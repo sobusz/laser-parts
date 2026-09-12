@@ -425,7 +425,7 @@ function MachinesTab() {
             </div>
           </div>
         ))}
-        {machines?.length === 0 && <p className="text-muted-foreground">Brak ogłoszeń. Nie publikujemy automatycznie starego TRUMATIC L3030.</p>}
+        {machines?.length === 0 && <p className="text-muted-foreground">Brak ogłoszeń. Seed wstawia TRUMATIC L3030 ze starej oferty — można wyłączyć.</p>}
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

@@ -60,9 +60,9 @@ export default function ArticlePage({ section }: { section?: string }) {
             )}
             <div className="bg-secondary text-white p-5">
               <div className="h-1 w-12 bg-primary mb-4" />
-              <p className="font-semibold mb-2">Szukasz konkretnej części?</p>
-              <p className="text-xs text-white/60 mb-4 leading-relaxed">
-                Katalog z numerami referencyjnymi dla Trumpf, Bystronic, Mazak i LVD.
+              <p className="font-semibold mb-2">Konkretna część z katalogu</p>
+              <p className="text-sm text-white/70 mb-4 leading-relaxed text-pretty">
+                Oferta zawiera numery referencyjne do maszyn Trumpf, Bystronic, Mazak i LVD. Wybrane pozycje można dodać do zapytania i przesłać jedną listą.
               </p>
               <Link href="/oferta">
                 <Button size="sm" className="w-full uppercase tracking-[0.08em] text-[12px]">
