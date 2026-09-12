@@ -42,6 +42,23 @@ vi.mock("./db", () => ({
   updateArticle: vi.fn().mockResolvedValue(undefined),
   deleteArticle: vi.fn().mockResolvedValue(undefined),
   getUsedMachines: vi.fn().mockResolvedValue([]),
+  getUsedMachineBySlug: vi.fn().mockImplementation((slug: string) => {
+    if (slug === "trumatic-l3030") {
+      return Promise.resolve({
+        id: 1,
+        title: "TRUMATIC L3030 (używana)",
+        slug: "trumatic-l3030",
+        description: "Urządzenie używane.",
+        imageUrl: null,
+        contactNote: "laser-parts@laser-parts.pl",
+        active: true,
+        sortOrder: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+    return Promise.resolve(undefined);
+  }),
   createUsedMachine: vi.fn().mockResolvedValue(undefined),
   updateUsedMachine: vi.fn().mockResolvedValue(undefined),
   deleteUsedMachine: vi.fn().mockResolvedValue(undefined),
@@ -137,6 +154,14 @@ describe("inquiries router", () => {
   it("list requires admin role", async () => {
     const caller = appRouter.createCaller(createPublicCtx());
     await expect(caller.inquiries.list()).rejects.toThrow();
+  });
+});
+
+describe("machines router", () => {
+  it("bySlug returns an active listing", async () => {
+    const caller = appRouter.createCaller(createPublicCtx());
+    const result = await caller.machines.bySlug({ slug: "trumatic-l3030" });
+    expect(result?.title).toBe("TRUMATIC L3030 (używana)");
   });
 });
 

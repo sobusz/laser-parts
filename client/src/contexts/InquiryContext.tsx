@@ -7,6 +7,7 @@ export interface InquiryListItem {
   quantity: number;
   note?: string;
   unit?: string;
+  packSize?: number | null;
 }
 
 interface InquiryContextValue {

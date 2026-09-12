@@ -5,45 +5,45 @@ import { Button } from "@/components/ui/button";
 import { useInquiry } from "@/contexts/InquiryContext";
 import { cn } from "@/lib/utils";
 import BrandLockup from "@/components/BrandLockup";
-
-const navLinks = [
-  {
-    label: "Oferta",
-    href: "/oferta",
-    children: [
-      { label: "Cała oferta", href: "/oferta" },
-      { label: "TRUMPF", href: "/oferta?kategoria=trumpf" },
-      { label: "Bystronic", href: "/oferta?kategoria=bystronic" },
-      { label: "Mazak", href: "/oferta?kategoria=mazak" },
-      { label: "LVD", href: "/oferta?kategoria=lvd" },
-      { label: "Inne marki", href: "/oferta?kategoria=inne" },
-    ],
-  },
-  { label: "Optyka", href: "/optyka" },
-  { label: "Nowość", href: "/nowosc" },
-  { label: "Oprogramowanie", href: "/oprogramowanie" },
-  { label: "Technologia", href: "/technologia" },
-  { label: "Kontakt", href: "/kontakt" },
-];
+import { useLocale } from "@/i18n/locale";
+import { catalogHref } from "@/lib/catalog-url";
 
 export default function Navbar() {
+  const { t, locale, setLocale } = useLocale();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [location] = useLocation();
   const { totalItems } = useInquiry();
-  const ofertaRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  const primary = [
+    { label: t("nav.catalog"), href: "/oferta" },
+    { label: t("nav.help"), href: "/kontakt" },
+    { label: t("nav.order"), href: "/jak-zamawiac" },
+    { label: t("nav.contact"), href: "/kontakt#dane" },
+  ];
+  const more = [
+    { label: t("nav.optics"), href: "/optyka" },
+    { label: t("nav.pvd"), href: "/nowosc" },
+    { label: t("nav.software"), href: "/oprogramowanie" },
+    { label: t("nav.tech"), href: "/technologia" },
+    { label: "TRUMPF", href: catalogHref({ brand: "trumpf" }) },
+    { label: "Bystronic", href: catalogHref({ brand: "bystronic" }) },
+    { label: "Mazak", href: catalogHref({ brand: "mazak" }) },
+    { label: "LVD", href: catalogHref({ brand: "lvd" }) },
+  ];
 
   useEffect(() => {
-    setDropdownOpen(false);
+    setMoreOpen(false);
     setMobileOpen(false);
   }, [location]);
 
   useEffect(() => {
     function onDocClick(event: MouseEvent) {
-      if (!ofertaRef.current?.contains(event.target as Node)) setDropdownOpen(false);
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false);
     }
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setDropdownOpen(false);
+      if (event.key === "Escape") setMoreOpen(false);
     }
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
@@ -54,92 +54,94 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-black">
+    <header className="sticky top-0 z-50 bg-[#2F3438]">
       <div className="container">
-        <div className="flex items-center justify-between h-[72px]">
+        <div className="flex items-center justify-between h-16 gap-2">
           <Link href="/" className="shrink-0">
             <BrandLockup inverted />
           </Link>
-
           <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) =>
-              link.children ? (
-                <div key={link.href} className="relative" ref={ofertaRef}>
-                  <button
-                    type="button"
-                    aria-expanded={dropdownOpen}
-                    aria-haspopup="true"
-                    aria-controls="oferta-menu"
-                    onClick={() => setDropdownOpen((open) => !open)}
-                    className={cn(
-                      "flex items-center gap-1 px-3 h-11 text-sm font-semibold transition-colors",
-                      location.startsWith("/oferta") || dropdownOpen
-                        ? "text-primary"
-                        : "text-white/80 hover:text-white"
-                    )}
-                  >
-                    {link.label}
-                    <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", dropdownOpen && "rotate-180")} />
-                  </button>
-                  {dropdownOpen ? (
-                    <div id="oferta-menu" role="menu" className="absolute top-full left-0 pt-2 z-50">
-                      <div className="w-52 bg-black border border-white/15 py-1">
-                        {link.children.map((child) => (
-                          <Link
-                            key={child.href}
-                            href={child.href}
-                            role="menuitem"
-                            className="block px-4 py-3 text-sm text-white/85 hover:bg-white/10 hover:text-white"
-                            onClick={() => setDropdownOpen(false)}
-                          >
-                            {child.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
+            {primary.map((link) => (
+              <Link
+                key={link.href + link.label}
+                href={link.href}
+                className={cn(
+                  "flex items-center px-3 h-11 text-sm font-semibold",
+                  location === link.href.split("#")[0] ? "text-primary" : "text-white/80 hover:text-white",
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="relative" ref={moreRef}>
+              <button
+                type="button"
+                aria-expanded={moreOpen}
+                className="flex items-center gap-1 px-3 h-11 text-sm font-semibold text-white/80 hover:text-white"
+                onClick={() => setMoreOpen((open) => !open)}
+              >
+                {t("nav.more")}
+                <ChevronDown className={cn("w-3.5 h-3.5", moreOpen && "rotate-180")} />
+              </button>
+              {moreOpen ? (
+                <div className="absolute top-full right-0 pt-2 z-50">
+                  <div className="w-52 bg-[#2F3438] border border-white/15 py-1">
+                    {more.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className="block px-4 py-3 text-sm text-white/85 hover:bg-white/10"
+                        onClick={() => setMoreOpen(false)}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "flex items-center px-3 h-11 text-sm font-semibold transition-colors",
-                    location === link.href
-                      ? "text-primary"
-                      : "text-white/80 hover:text-white"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              )
-            )}
+              ) : null}
+            </div>
           </nav>
-
-          <div className="flex items-center gap-2">
-            <a
-              href="tel:+48691732408"
-              className="hidden md:flex items-center gap-2 h-11 px-3 text-sm font-semibold text-white/90 hover:text-white"
-            >
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex rounded border border-white/20 text-xs font-semibold">
+              <button
+                type="button"
+                className={cn("h-9 px-2", locale === "pl" ? "bg-primary text-primary-foreground" : "text-white/80")}
+                onClick={() => setLocale("pl")}
+                aria-pressed={locale === "pl"}
+                lang="pl"
+              >
+                PL
+              </button>
+              <button
+                type="button"
+                className={cn("h-9 px-2", locale === "en" ? "bg-primary text-primary-foreground" : "text-white/80")}
+                onClick={() => setLocale("en")}
+                aria-pressed={locale === "en"}
+                lang="en"
+              >
+                EN
+              </button>
+            </div>
+            <a href="tel:+48691732408" className="hidden md:flex items-center gap-2 h-11 px-2 text-sm font-semibold text-white/90">
               <Phone className="w-4 h-4" />
               +48 691 732 408
             </a>
             <Link href="/zapytanie">
-              <Button className="relative gap-2 px-5 h-11 text-sm">
+              <Button className="relative gap-2 px-3 sm:px-5 h-11 text-sm">
                 <ClipboardList className="w-4 h-4" />
-                <span className="hidden sm:inline">Zapytanie</span>
-                {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-black text-primary text-xs font-bold min-w-5 h-5 px-1 flex items-center justify-center">
-                    <span className="sr-only">Pozycji w zapytaniu: </span>
+                <span className="hidden sm:inline">{t("nav.inquiry")}</span>
+                {totalItems > 0 ? (
+                  <span className="absolute -top-2 -right-2 bg-[#2F3438] text-primary text-xs font-bold min-w-5 h-5 px-1 flex items-center justify-center border border-primary">
+                    <span className="sr-only">{t("nav.inquiryCount")} </span>
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
-                )}
+                ) : null}
               </Button>
             </Link>
             <button
-              className="lg:hidden h-11 w-11 flex items-center justify-center text-white hover:bg-white/10"
+              className="lg:hidden h-11 w-11 flex items-center justify-center text-white"
               onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? "Zamknij menu" : "Otwórz menu"}
+              aria-label={mobileOpen ? t("nav.closeMenu") : t("nav.openMenu")}
               aria-expanded={mobileOpen}
             >
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -147,47 +149,26 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-
-      {mobileOpen && (
-        <div className="lg:hidden border-t border-white/15 bg-black">
-          <nav className="container py-3 flex flex-col gap-1">
-            <a href="tel:+48691732408" className="flex items-center gap-2 px-3 py-3.5 text-base font-semibold text-white">
+      {mobileOpen ? (
+        <div className="lg:hidden border-t border-white/15 bg-[#2F3438]">
+          <nav className="container py-3 flex flex-col">
+            <a href="tel:+48691732408" className="flex items-center gap-2 px-3 py-3 font-semibold text-white">
               <Phone className="w-4 h-4" />
               +48 691 732 408
             </a>
-            {navLinks.map((link) => (
-              <div key={link.href}>
-                <Link
-                  href={link.href}
-                  className={cn(
-                    "block px-3 py-3.5 text-base font-medium",
-                    location === link.href
-                      ? "text-primary bg-white/10 border-l-2 border-primary"
-                      : "text-white/85 hover:bg-white/10 hover:text-white"
-                  )}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                </Link>
-                {link.children && (
-                  <div className="ml-4 flex flex-col">
-                    {link.children.slice(1).map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className="block px-3 py-2.5 text-sm text-white/70 hover:text-white"
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {[...primary, ...more].map((link) => (
+              <Link
+                key={link.href + link.label}
+                href={link.href}
+                className="block px-3 py-3 text-white/85"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </Link>
             ))}
           </nav>
         </div>
-      )}
+      ) : null}
     </header>
   );
 }

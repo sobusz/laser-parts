@@ -54,10 +54,9 @@ export default function Contact() {
         description={CONTACT_INTRO}
       />
 
-      <div className="tech-grid">
       <div className="container py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          <div className="space-y-6">
+          <div className="space-y-6" id="dane">
           <div className="space-y-4">
             <div className="flex gap-3">
               <div className="w-9 h-9 bg-secondary text-white flex items-center justify-center shrink-0 mt-0.5">
@@ -154,7 +153,6 @@ export default function Contact() {
             )}
           </div>
         </div>
-      </div>
       </div>
     </PublicLayout>
   );

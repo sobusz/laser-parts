@@ -4,11 +4,14 @@ import NotFound from "@/pages/NotFound";
 import { Route, Router, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LocaleProvider } from "./i18n/locale";
 import Home from "./pages/Home";
 import Catalog from "./pages/Catalog";
 import ProductDetail from "./pages/ProductDetail";
+import UsedMachine from "./pages/UsedMachine";
 import Inquiry from "./pages/Inquiry";
 import ArticlePage from "./pages/Article";
+import HowToOrder from "./pages/HowToOrder";
 import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
@@ -21,7 +24,9 @@ function AppRoutes() {
       <Route path="/" component={Home} />
       <Route path="/oferta" component={Catalog} />
       <Route path="/produkt/:slug" component={ProductDetail} />
+      <Route path="/maszyna/:slug" component={UsedMachine} />
       <Route path="/zapytanie" component={Inquiry} />
+      <Route path="/jak-zamawiac" component={HowToOrder} />
       <Route path="/optyka">{() => <ArticlePage section="optyka" />}</Route>
       <Route path="/nowosc">{() => <ArticlePage section="nowosc" />}</Route>
       <Route path="/oprogramowanie">{() => <ArticlePage section="oprogramowanie" />}</Route>
@@ -43,12 +48,14 @@ function App() {
   return (
     <Router base={base}>
       <ErrorBoundary>
-        <ThemeProvider defaultTheme="light">
-          <TooltipProvider>
-            <Toaster richColors position="top-right" />
-            <AppRoutes />
-          </TooltipProvider>
-        </ThemeProvider>
+        <LocaleProvider>
+          <ThemeProvider defaultTheme="light">
+            <TooltipProvider>
+              <Toaster richColors position="top-right" />
+              <AppRoutes />
+            </TooltipProvider>
+          </ThemeProvider>
+        </LocaleProvider>
       </ErrorBoundary>
     </Router>
   );

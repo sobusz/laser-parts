@@ -3,76 +3,52 @@ import PublicLayout from "@/components/PublicLayout";
 import PageHeader from "@/components/PageHeader";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/i18n/locale";
+import { ARTICLE_TEST_EN } from "@shared/catalog-test-mocks";
 
-const SECTION_META: Record<string, { title: string; fallbackSlug: string }> = {
-  optyka: { title: "Optyka", fallbackSlug: "optyka" },
-  nowosc: { title: "Nowość", fallbackSlug: "nowosc" },
-  oprogramowanie: { title: "Oprogramowanie", fallbackSlug: "oprogramowanie" },
-  technologia: { title: "Technologia", fallbackSlug: "technologia" },
+const SECTION_META: Record<string, { titleKey: "nav.optics" | "nav.pvd" | "nav.software" | "nav.tech"; fallbackSlug: string }> = {
+  optyka: { titleKey: "nav.optics", fallbackSlug: "optyka" },
+  nowosc: { titleKey: "nav.pvd", fallbackSlug: "nowosc" },
+  oprogramowanie: { titleKey: "nav.software", fallbackSlug: "oprogramowanie" },
+  technologia: { titleKey: "nav.tech", fallbackSlug: "technologia" },
 };
 
 export default function ArticlePage({ section }: { section?: string }) {
+  const { t, locale } = useLocale();
   const params = useParams<{ slug?: string }>();
   const sectionKey = section ?? "technologia";
   const meta = SECTION_META[sectionKey] ?? SECTION_META.technologia;
   const slug = params.slug ?? meta.fallbackSlug;
-
   const { data: article, isLoading } = trpc.articles.bySlug.useQuery({ slug });
-  const { data: related } = trpc.articles.bySection.useQuery({ section: sectionKey as any });
+  const en = locale === "en" ? ARTICLE_TEST_EN[slug] ?? ARTICLE_TEST_EN[sectionKey] : null;
+  const title = en?.title ?? article?.title ?? t(meta.titleKey);
+  const excerpt = en?.excerpt ?? article?.excerpt;
+  const body = en?.body ?? article?.body;
 
   return (
     <PublicLayout>
       <PageHeader
-        crumbs={[{ label: "Strona główna", href: "/" }, { label: meta.title }]}
-        title={article?.title ?? meta.title}
-        description={article?.excerpt}
+        crumbs={[{ label: locale === "en" ? "Home" : "Strona główna", href: "/" }, { label: t(meta.titleKey) }]}
+        title={title}
+        description={excerpt}
       />
-      <div className="tech-grid">
-        <div className="container py-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <article className="lg:col-span-3 bg-white border border-border p-6 md:p-12">
-            {isLoading ? (
-              <p className="text-muted-foreground">Ładowanie…</p>
-            ) : article ? (
-              <div className="whitespace-pre-wrap text-[15px] leading-[1.75] text-foreground/85 max-w-[68ch]">
-                {article.body}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">Brak treści. Uzupełnij artykuł w panelu administracyjnym.</p>
-            )}
-          </article>
-          <aside className="space-y-4">
-            {related && related.length > 1 && (
-              <div className="bg-white border border-border">
-                <h2 className="eyebrow text-muted-foreground px-4 py-3 border-b border-border">W tej sekcji</h2>
-                <ul className="divide-y divide-border">
-                  {related.map((a) => (
-                    <li key={a.id}>
-                      <Link
-                        href={`/${sectionKey}/${a.slug}`}
-                        className="block px-4 py-2.5 text-sm hover:bg-muted border-l-2 border-transparent hover:border-primary transition-colors"
-                      >
-                        {a.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="bg-secondary text-white p-5">
-              <div className="h-1 w-12 bg-primary mb-4" />
-              <p className="font-semibold mb-2">Konkretna część z katalogu</p>
-              <p className="text-sm text-white/70 mb-4 leading-relaxed text-pretty">
-                Oferta zawiera numery referencyjne do maszyn Trumpf, Bystronic, Mazak i LVD. Wybrane pozycje można dodać do zapytania i przesłać jedną listą.
-              </p>
-              <Link href="/oferta">
-                <Button size="sm" className="w-full uppercase tracking-[0.08em] text-[12px]">
-                  Zobacz ofertę
-                </Button>
-              </Link>
-            </div>
-          </aside>
-        </div>
+      <div className="container py-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <article className="lg:col-span-3 bg-white border border-border p-6 md:p-12">
+          {isLoading ? (
+            <p className="text-muted-foreground">…</p>
+          ) : body ? (
+            <div className="whitespace-pre-wrap text-[15px] leading-[1.75] text-foreground/85 max-w-[68ch]">{body}</div>
+          ) : (
+            <p className="text-muted-foreground">{t("product.missing")}</p>
+          )}
+        </article>
+        <aside>
+          <Link href="/oferta">
+            <Button className="w-full h-11">{t("nav.catalog")}</Button>
+          </Link>
+        </aside>
       </div>
     </PublicLayout>
   );
 }
+

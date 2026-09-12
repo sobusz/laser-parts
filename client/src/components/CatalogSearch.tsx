@@ -3,25 +3,29 @@ import { Link, useLocation } from "wouter";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { catalogHref } from "@/lib/catalog-url";
+import { catalogHref, type CatalogFilters } from "@/lib/catalog-url";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/i18n/locale";
 
 export default function CatalogSearch({
   id,
-  categorySlug = "",
   query,
   onQueryChange,
+  filters = {},
   className,
   tone = "default",
+  compact = false,
 }: {
   id: string;
-  categorySlug?: string;
   query: string;
   onQueryChange?: (value: string) => void;
+  filters?: CatalogFilters;
   className?: string;
   tone?: "default" | "onDark";
+  compact?: boolean;
 }) {
+  const { t } = useLocale();
   const [, setLocation] = useLocation();
   const listId = useId();
   const rootRef = useRef<HTMLFormElement>(null);
@@ -35,10 +39,7 @@ export default function CatalogSearch({
   }, [query]);
 
   const enabled = debounced.length >= 2;
-  const { data: hits } = trpc.products.list.useQuery(
-    { search: debounced, limit: 8 },
-    { enabled },
-  );
+  const { data: hits } = trpc.products.list.useQuery({ search: debounced, limit: 8 }, { enabled });
   const suggestions = enabled ? hits ?? [] : [];
   const showList = open && enabled && suggestions.length > 0;
 
@@ -52,7 +53,7 @@ export default function CatalogSearch({
 
   function goToCatalog() {
     setOpen(false);
-    setLocation(catalogHref(categorySlug, query));
+    setLocation(catalogHref({ ...filters, q: query }));
   }
 
   return (
@@ -66,21 +67,15 @@ export default function CatalogSearch({
     >
       <label
         htmlFor={id}
-        className={cn(
-          "block text-sm font-medium mb-1",
-          tone === "onDark" ? "text-white" : "text-foreground",
-        )}
+        className={cn("block text-sm font-medium mb-1", tone === "onDark" ? "text-white" : "text-foreground")}
       >
-        Szukaj części
+        {t("search.label")}
       </label>
-      <p
-        className={cn(
-          "text-sm mb-2 leading-relaxed",
-          tone === "onDark" ? "text-white/75" : "text-muted-foreground",
-        )}
-      >
-        Wyszukiwanie po nazwie części lub numerze z etykiety. Podpowiedzi pojawiają się po dwóch znakach.
-      </p>
+      {!compact ? (
+        <p className={cn("text-sm mb-2 leading-relaxed", tone === "onDark" ? "text-white/75" : "text-muted-foreground")}>
+          {t("search.placeholder")}
+        </p>
+      ) : null}
       <div className="flex">
         <Input
           id={id}
@@ -90,7 +85,7 @@ export default function CatalogSearch({
           aria-autocomplete="list"
           autoComplete="off"
           value={query}
-          placeholder="Nazwa części lub numer referencyjny"
+          placeholder={t("search.placeholder")}
           onChange={(event) => {
             onQueryChange?.(event.target.value);
             setOpen(true);
@@ -115,7 +110,7 @@ export default function CatalogSearch({
         />
         <Button type="submit" className="h-12 rounded-l-none px-5 shrink-0">
           <Search className="w-4 h-4" aria-hidden="true" />
-          Szukaj
+          {t("search.submit")}
         </Button>
       </div>
       {showList && (
@@ -128,16 +123,11 @@ export default function CatalogSearch({
             <li key={item.id} role="option" aria-selected={index === highlight}>
               <Link
                 href={`/produkt/${item.slug}`}
-                className={cn(
-                  "block px-4 py-3 text-left",
-                  index === highlight ? "bg-primary/20" : "hover:bg-muted",
-                )}
+                className={cn("block px-4 py-3 text-left", index === highlight ? "bg-primary/20" : "hover:bg-muted")}
                 onMouseEnter={() => setHighlight(index)}
                 onClick={() => setOpen(false)}
               >
-                <span className="font-mono text-sm font-medium">
-                  {item.referenceNumber ?? "—"}
-                </span>
+                <span className="font-mono text-sm font-medium">{item.referenceNumber ?? "—"}</span>
                 <span className="block text-sm mt-0.5">{item.name}</span>
               </Link>
             </li>
@@ -148,7 +138,7 @@ export default function CatalogSearch({
               className="w-full text-left px-4 py-3 text-sm font-medium border-t border-border hover:bg-muted"
               onClick={goToCatalog}
             >
-              Pokaż wszystkie wyniki w ofercie
+              {t("search.allResults")}
             </button>
           </li>
         </ul>

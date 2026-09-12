@@ -1,60 +1,84 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import { Trash2, ClipboardList } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 import PublicLayout from "@/components/PublicLayout";
-import PageHeader from "@/components/PageHeader";
+import QuantityStepper from "@/components/QuantityStepper";
 import { useInquiry } from "@/contexts/InquiryContext";
-import { INQUIRY_INTRO } from "@shared/legacy-copy";
 import { trpc } from "@/lib/trpc";
+import { useLocale } from "@/i18n/locale";
+import type { MessageKey } from "@/i18n/messages";
 
 type FieldKey = "items" | "companyName" | "contactName" | "contactEmail";
+const FORM_KEY = "laser-parts-inquiry-form";
+const isPreview = import.meta.env.VITE_PREVIEW === "true";
 
-const FIELD_LABELS: Record<FieldKey, string> = {
-  items: "Lista pozycji",
-  companyName: "Nazwa firmy",
-  contactName: "Osoba kontaktowa",
-  contactEmail: "E-mail",
+const emptyForm = {
+  companyName: "",
+  nip: "",
+  contactName: "",
+  contactEmail: "",
+  contactPhone: "",
+  notes: "",
 };
 
 export default function Inquiry() {
+  const { t } = useLocale();
   const { items, updateQuantity, removeItem, updateNote, clear } = useInquiry();
-  const [sentNumber, setSentNumber] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState("");
+  const [testTicket, setTestTicket] = useState<string | null>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
-  const [form, setForm] = useState({
-    companyName: "",
-    nip: "",
-    contactName: "",
-    contactEmail: "",
-    contactPhone: "",
-    notes: "",
+  const [form, setForm] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem(FORM_KEY);
+      return stored ? { ...emptyForm, ...JSON.parse(stored) } : emptyForm;
+    } catch {
+      return emptyForm;
+    }
   });
 
-  const send = trpc.inquiries.create.useMutation({
-    onSuccess: (data) => {
-      setSentNumber(data.inquiryNumber);
-      setErrors({});
-      clear();
-      toast.success("Zapytanie zostało wysłane");
-    },
-    onError: (err) => toast.error(err.message ?? "Nie udało się wysłać zapytania"),
-  });
+  useEffect(() => {
+    sessionStorage.setItem(FORM_KEY, JSON.stringify(form));
+  }, [form]);
+
+  const send = trpc.inquiries.create.useMutation();
+
+  const fieldLabels: Record<FieldKey, string> = {
+    items: t("inquiry.items"),
+    companyName: t("inquiry.company"),
+    contactName: t("inquiry.person"),
+    contactEmail: t("inquiry.email"),
+  };
 
   function validate(): Partial<Record<FieldKey, string>> {
     const next: Partial<Record<FieldKey, string>> = {};
-    if (items.length === 0) next.items = "Dodaj przynajmniej jedną pozycję z katalogu.";
-    if (!form.companyName.trim()) next.companyName = "Podaj nazwę firmy.";
-    if (!form.contactName.trim()) next.contactName = "Podaj osobę kontaktową.";
-    if (!form.contactEmail.trim()) next.contactEmail = "Podaj adres e-mail.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) {
-      next.contactEmail = "Podaj poprawny adres e-mail.";
-    }
+    if (items.length === 0) next.items = t("inquiry.errItems");
+    if (!form.companyName.trim()) next.companyName = t("inquiry.errCompany");
+    if (!form.contactName.trim()) next.contactName = t("inquiry.errPerson");
+    if (!form.contactEmail.trim()) next.contactEmail = t("inquiry.errEmail");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) next.contactEmail = t("inquiry.errEmailBad");
     return next;
+  }
+
+  function acceptFiles(list: FileList | null) {
+    if (!list) return;
+    const allowed = /\.(pdf|jpe?g|png|xlsx?|docx?)$/i;
+    const next: File[] = [];
+    let rejected = false;
+    for (const file of Array.from(list)) {
+      if (!allowed.test(file.name) || file.size > 8 * 1024 * 1024) {
+        rejected = true;
+        continue;
+      }
+      next.push(file);
+    }
+    setFiles(next);
+    setFileError(rejected ? t("inquiry.fileErr") : "");
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -65,8 +89,17 @@ export default function Inquiry() {
       window.requestAnimationFrame(() => summaryRef.current?.focus());
       return;
     }
+    const fileNote = files.length ? `Załączniki testowe: ${files.map((f) => f.name).join(", ")}` : "";
+    const notes = [form.notes.trim(), fileNote].filter(Boolean).join("\n");
+    if (isPreview) {
+      const ticket = `ZP-TEST-${Date.now().toString().slice(-6)}`;
+      setTestTicket(ticket);
+      clear();
+      return;
+    }
     send.mutate({
       ...form,
+      notes,
       items: items.map((i) => ({
         productId: i.productId,
         productName: i.name,
@@ -81,156 +114,157 @@ export default function Inquiry() {
 
   return (
     <PublicLayout>
-      <PageHeader
-        crumbs={[{ label: "Strona główna", href: "/" }, { label: "Zapytanie ofertowe" }]}
-        title="Zapytanie"
-        description={INQUIRY_INTRO}
-      />
-
-      <div className="tech-grid">
-      <div className="container py-10">
-        {sentNumber ? (
-          <div className="max-w-lg mx-auto bg-white border border-border p-8 text-center">
-            <div className="h-1 w-12 bg-primary mx-auto mb-5" />
-            <ClipboardList className="w-10 h-10 mx-auto mb-3" />
-            <h2 className="text-xl font-semibold mb-2">Zapytanie zostało przyjęte</h2>
-            <p className="text-muted-foreground mb-1">Numer sprawy: <span className="font-mono font-medium">{sentNumber}</span></p>
-            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-              Odpowiedź z ceną i terminem realizacji prześlemy na wskazany adres e-mail. W razie potrzeby skontaktujemy się telefonicznie.
-            </p>
-            <Link href="/oferta"><Button>Wróć do oferty</Button></Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-            <div className="lg:col-span-3" id="inquiry-items">
-              <h2 className="font-semibold mb-4">Pozycje</h2>
-              {errors.items ? (
-                <p id="inquiry-items-error" className="text-sm text-destructive mb-3">{errors.items}</p>
-              ) : null}
-              {items.length === 0 ? (
-                <div className="border border-border bg-white p-8 text-center text-muted-foreground">
-                  <p className="mb-4 leading-relaxed max-w-md mx-auto">
-                    Lista zapytania jest pusta. Prosimy dodać pozycje z oferty (ikona przy nazwie części), a następnie przesłać zapytanie zbiorczo.
-                  </p>
-                  <Link href="/oferta"><Button variant="outline">Otwórz ofertę</Button></Link>
-                </div>
-              ) : (
-                <div className="border border-border bg-white divide-y divide-border">
-                  {items.map((item, index) => (
-                    <div key={`${item.productId}-${index}`} className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium">{item.name}</p>
-                          {item.referenceNumber && (
-                            <p className="text-xs font-mono text-muted-foreground">Ref. {item.referenceNumber}</p>
-                          )}
-                        </div>
-                        <button type="button" onClick={() => removeItem(index)} className="text-muted-foreground hover:text-destructive" aria-label={`Usuń ${item.name}`}>
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-3 mt-3">
-                        <Label htmlFor={`qty-${index}`} className="text-xs">Ilość</Label>
-                        <Input
-                          id={`qty-${index}`}
-                          type="number"
-                          min={1}
-                          className="w-20 h-8"
-                          value={item.quantity}
-                          onChange={(e) => updateQuantity(index, Number(e.target.value))}
-                        />
-                        <Input
-                          placeholder="np. preferowany termin dostawy, inny przekrój"
-                          className="h-8"
-                          value={item.note ?? ""}
-                          onChange={(e) => updateNote(index, e.target.value)}
-                          aria-label={`Uwaga do ${item.name}`}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <form onSubmit={handleSubmit} noValidate className="lg:col-span-2 bg-white border border-border p-6 space-y-3 self-start lg:sticky lg:top-20">
-              <div className="h-1 w-12 bg-primary mb-4" />
-              <h2 className="font-semibold mb-2">Dane do oferty</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                Do przygotowania oferty niezbędne są nazwa firmy oraz osoba kontaktowa. NIP i telefon przyspieszają wystawienie faktury oraz kontakt, nie są jednak wymagane.
-              </p>
-              {errorKeys.length > 0 ? (
-                <div
-                  ref={summaryRef}
-                  tabIndex={-1}
-                  role="alert"
-                  className="border border-destructive bg-destructive/5 p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <p className="font-semibold text-sm mb-2">Formularz zawiera błędy</p>
-                  <ul className="list-disc pl-5 space-y-1 text-sm">
-                    {errorKeys.map((key) => (
-                      <li key={key}>
-                        <a href={`#inquiry-${key}`} className="underline underline-offset-2">
-                          {FIELD_LABELS[key]}: {errors[key]}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              <div>
-                <Label htmlFor="inquiry-companyName">Nazwa firmy *</Label>
-                <Input
-                  id="inquiry-companyName"
-                  value={form.companyName}
-                  aria-invalid={Boolean(errors.companyName)}
-                  aria-describedby={errors.companyName ? "inquiry-companyName-error" : undefined}
-                  onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-                />
-                {errors.companyName ? <p id="inquiry-companyName-error" className="text-sm text-destructive mt-1">{errors.companyName}</p> : null}
-              </div>
-              <div>
-                <Label htmlFor="inquiry-nip">NIP</Label>
-                <Input id="inquiry-nip" value={form.nip} onChange={(e) => setForm({ ...form, nip: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="inquiry-contactName">Osoba kontaktowa *</Label>
-                <Input
-                  id="inquiry-contactName"
-                  value={form.contactName}
-                  aria-invalid={Boolean(errors.contactName)}
-                  aria-describedby={errors.contactName ? "inquiry-contactName-error" : undefined}
-                  onChange={(e) => setForm({ ...form, contactName: e.target.value })}
-                />
-                {errors.contactName ? <p id="inquiry-contactName-error" className="text-sm text-destructive mt-1">{errors.contactName}</p> : null}
-              </div>
-              <div>
-                <Label htmlFor="inquiry-contactEmail">E-mail *</Label>
-                <Input
-                  id="inquiry-contactEmail"
-                  type="email"
-                  value={form.contactEmail}
-                  aria-invalid={Boolean(errors.contactEmail)}
-                  aria-describedby={errors.contactEmail ? "inquiry-contactEmail-error" : undefined}
-                  onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
-                />
-                {errors.contactEmail ? <p id="inquiry-contactEmail-error" className="text-sm text-destructive mt-1">{errors.contactEmail}</p> : null}
-              </div>
-              <div>
-                <Label htmlFor="inquiry-contactPhone">Telefon</Label>
-                <Input id="inquiry-contactPhone" value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="inquiry-notes">Uwagi</Label>
-                <Textarea id="inquiry-notes" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-              </div>
-              <Button type="submit" className="w-full h-11" disabled={send.isPending}>
-                {send.isPending ? "Wysyłanie..." : "Wyślij zapytanie"}
-              </Button>
-            </form>
-          </div>
-        )}
+      <div className="bg-white border-b border-border">
+        <div className="container py-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">{t("inquiry.title")}</h1>
+          <p className="text-muted-foreground max-w-2xl">{t("inquiry.lead")}</p>
+        </div>
       </div>
+      <div className="container py-8">
+        {isPreview ? (
+          <p className="mb-6 border border-border bg-muted/50 p-4 text-sm leading-relaxed">{t("inquiry.demo")}</p>
+        ) : null}
+        {testTicket || send.isSuccess ? (
+          <p className="mb-6 border border-border bg-white p-4 text-sm">
+            {t("inquiry.testOk")} {testTicket ?? send.data?.inquiryNumber}
+            {files.length ? ` — ${files.map((f) => f.name).join(", ")}` : ""}
+          </p>
+        ) : null}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+          <div className="lg:col-span-3" id="inquiry-items">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="font-semibold">{t("inquiry.items")}</h2>
+              <Link href="/oferta" className="text-sm font-semibold underline underline-offset-4">
+                {t("inquiry.openCatalog")}
+              </Link>
+            </div>
+            {errors.items ? <p className="text-sm text-destructive mb-3">{errors.items}</p> : null}
+            {items.length === 0 ? (
+              <div className="border border-border bg-white p-8 text-center text-muted-foreground">
+                <p className="mb-4">{t("inquiry.empty")}</p>
+                <Link href="/oferta">
+                  <Button variant="outline">{t("nav.catalog")}</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="border border-border bg-white divide-y divide-border">
+                {items.map((item, index) => (
+                  <div key={`${item.productId}-${index}`} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        {item.referenceNumber ? (
+                          <p className="text-xs font-mono text-muted-foreground">Ref. {item.referenceNumber}</p>
+                        ) : null}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {item.packSize
+                            ? `${t("product.pack")} (${item.packSize} ${t("product.pcs")})`
+                            : item.unit || t("product.pcs")}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index)}
+                        className="h-11 px-3 text-sm text-muted-foreground hover:text-destructive"
+                        aria-label={`${t("inquiry.remove")} ${item.name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3">
+                      <QuantityStepper value={item.quantity} onChange={(value) => updateQuantity(index, value)} />
+                      <Input
+                        placeholder={t("inquiry.note")}
+                        className="h-11"
+                        value={item.note ?? ""}
+                        onChange={(e) => updateNote(index, e.target.value)}
+                        aria-label={`${t("inquiry.note")} ${item.name}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="mt-4 text-sm text-muted-foreground">{t("catalog.promo")}</p>
+          </div>
+
+          <form onSubmit={handleSubmit} noValidate className="lg:col-span-2 bg-white border border-border p-6 space-y-3 self-start lg:sticky lg:top-24">
+            <h2 className="font-semibold mb-2">{t("inquiry.form")}</h2>
+            {errorKeys.length > 0 ? (
+              <div
+                ref={summaryRef}
+                tabIndex={-1}
+                role="alert"
+                className="border border-destructive bg-destructive/5 p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <p className="font-semibold text-sm mb-2">{t("inquiry.errors")}</p>
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  {errorKeys.map((key) => (
+                    <li key={key}>
+                      <a href={`#inquiry-${key}`} className="underline underline-offset-2">
+                        {fieldLabels[key]}: {errors[key]}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {(
+              [
+                ["companyName", "inquiry.company", true],
+                ["nip", "inquiry.nip", false],
+                ["contactName", "inquiry.person", true],
+                ["contactEmail", "inquiry.email", true],
+                ["contactPhone", "inquiry.phone", false],
+              ] as const
+            ).map(([field, labelKey, required]) => (
+              <div key={field}>
+                <Label htmlFor={`inquiry-${field}`}>
+                  {t(labelKey as MessageKey)}
+                  {required ? " *" : ""}
+                </Label>
+                <Input
+                  id={`inquiry-${field}`}
+                  type={field === "contactEmail" ? "email" : "text"}
+                  value={form[field]}
+                  aria-invalid={Boolean(errors[field as FieldKey])}
+                  onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                />
+                {errors[field as FieldKey] ? (
+                  <p className="text-sm text-destructive mt-1">{errors[field as FieldKey]}</p>
+                ) : null}
+              </div>
+            ))}
+            <div>
+              <Label htmlFor="inquiry-notes">{t("inquiry.notes")}</Label>
+              <Textarea id="inquiry-notes" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-1">{t("inquiry.files")}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-2">{t("inquiry.filesHint")}</p>
+              <input
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx"
+                className="block w-full text-sm"
+                onChange={(event) => acceptFiles(event.target.files)}
+              />
+              {fileError ? <p className="text-sm text-destructive mt-1">{fileError}</p> : null}
+              {files.length > 0 ? (
+                <ul className="mt-2 text-xs text-muted-foreground">
+                  {files.map((file) => (
+                    <li key={file.name}>
+                      {file.name} ({Math.round(file.size / 1024)} kB)
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+            <Button type="submit" className="w-full h-11" disabled={send.isPending}>
+              {t("inquiry.submit")}
+            </Button>
+          </form>
+        </div>
       </div>
     </PublicLayout>
   );

@@ -54,8 +54,13 @@ function resolve(path: string, input: unknown): unknown {
     case "machines.list":
     case "machines.adminList":
       return previewMachines;
+    case "machines.bySlug": {
+      const slug = (input as { slug: string }).slug;
+      const machine = previewMachines.find((m) => m.slug === slug);
+      return machine?.active ? machine : null;
+    }
     case "inquiries.create":
-      return { id: 1, inquiryNumber: `ZP-PODGLAD-${Date.now().toString().slice(-6)}` };
+      return { id: 1, inquiryNumber: `ZP-TEST-${Date.now().toString().slice(-6)}` };
     case "contact.send":
       return { success: true };
     default:

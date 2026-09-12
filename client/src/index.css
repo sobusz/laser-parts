@@ -160,10 +160,7 @@
 @layer components {
   /* Blueprint grid used to keep large light areas from reading as blank paper. */
   .tech-grid {
-    background-image:
-      linear-gradient(rgb(10 10 10 / 0.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(10 10 10 / 0.07) 1px, transparent 1px);
-    background-size: 44px 44px;
+    background: none;
   }
 
   .tech-grid-dark {

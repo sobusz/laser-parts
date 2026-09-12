@@ -4,11 +4,12 @@ import BrandLockup from "@/components/BrandLockup";
 import { FOOTER_BLURB, OEM_DISCLAIMER } from "@shared/legacy-copy";
 
 const NAV_LINKS = [
-  { label: "Oferta", href: "/oferta" },
-  { label: "Optyka", href: "/optyka" },
-  { label: "Oprogramowanie JETCAM", href: "/oprogramowanie" },
-  { label: "Technologia", href: "/technologia" },
+  { label: "Katalog", href: "/oferta" },
+  { label: "Jak zamawiać", href: "/jak-zamawiac" },
   { label: "Kontakt", href: "/kontakt" },
+  { label: "Optyka", href: "/optyka" },
+  { label: "Dysze PVD", href: "/nowosc" },
+  { label: "Oprogramowanie", href: "/oprogramowanie" },
 ];
 
 const PHONES = [
@@ -21,7 +22,7 @@ const EMAILS = ["laser-parts@laser-parts.pl", "zamowienia@laser-parts.pl"];
 
 export default function Footer() {
   return (
-    <footer className="mt-auto bg-black text-white/85">
+    <footer className="mt-auto bg-[#2F3438] text-white/85">
       <div className="h-1 bg-primary" />
       <div className="container py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">

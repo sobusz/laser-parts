@@ -35,6 +35,7 @@ import {
   updateArticle,
   deleteArticle,
   getUsedMachines,
+  getUsedMachineBySlug,
   createUsedMachine,
   updateUsedMachine,
   deleteUsedMachine,
@@ -281,6 +282,11 @@ const articlesRouter = router({
 
 const machinesRouter = router({
   list: publicProcedure.query(() => getUsedMachines(true)),
+  bySlug: publicProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
+    const machine = await getUsedMachineBySlug(input.slug);
+    if (!machine?.active) return null;
+    return machine;
+  }),
   adminList: adminProcedure.query(() => getUsedMachines(false)),
   create: adminProcedure
     .input(
