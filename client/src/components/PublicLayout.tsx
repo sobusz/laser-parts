@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import PreviewBanner from "./PreviewBanner";
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -15,6 +16,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
       >
         Przejdź do treści
       </a>
+      <PreviewBanner />
       <Navbar />
       <main id="tresc" className="flex-1">{children}</main>
       <Footer />

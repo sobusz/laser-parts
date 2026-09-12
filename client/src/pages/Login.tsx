@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
+import { publicUrl } from "@/lib/public-url";
 import BrandLockup from "@/components/BrandLockup";
 
 export default function Login() {
@@ -24,7 +25,7 @@ export default function Login() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="relative hidden lg:block bg-black">
-        <img src="/photos/hero-laser.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-65" />
+        <img src={publicUrl("/photos/hero-laser.jpg")} alt="" className="absolute inset-0 h-full w-full object-cover opacity-65" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/25" />
         <div className="absolute inset-0 tech-grid-dark" />
         <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary" />

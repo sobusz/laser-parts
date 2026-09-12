@@ -7,6 +7,7 @@ import CatalogSearch from "@/components/CatalogSearch";
 import CommercialTerms from "@/components/CommercialTerms";
 import OrderGratis from "@/components/OrderGratis";
 import { catalogHref } from "@/lib/catalog-url";
+import { publicUrl } from "@/lib/public-url";
 import { trpc } from "@/lib/trpc";
 import {
   HOME_CTA_NOTE,
@@ -51,7 +52,7 @@ export default function Home() {
     <PublicLayout>
       <section className="relative flex items-center min-h-[28rem] md:min-h-[32rem] xl:min-h-[36rem]">
         <img
-          src="/photos/cut-metal.jpg"
+          src={publicUrl("/photos/cut-metal.jpg")}
           alt="Głowica wycinarki laserowej tnąca arkusz blachy"
           className="absolute inset-0 h-full w-full object-cover object-[78%_center]"
         />
@@ -103,7 +104,7 @@ export default function Home() {
           </p>
           <div className="bg-white border border-border">
             {displayCategories.map((cat) => {
-              const count = "id" in cat ? countByCategory.get(cat.id) : undefined;
+              const count = "id" in cat && typeof cat.id === "number" ? countByCategory.get(cat.id) : undefined;
               return (
                 <Link
                   key={cat.slug}

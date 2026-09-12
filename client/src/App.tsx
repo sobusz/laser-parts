@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Router, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -15,7 +15,7 @@ import Login from "./pages/Login";
 import Privacy from "./pages/Privacy";
 import Rodo from "./pages/Rodo";
 
-function Router() {
+function AppRoutes() {
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -39,15 +39,18 @@ function Router() {
 }
 
 function App() {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "") || undefined;
   return (
-    <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster richColors position="top-right" />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+    <Router base={base}>
+      <ErrorBoundary>
+        <ThemeProvider defaultTheme="light">
+          <TooltipProvider>
+            <Toaster richColors position="top-right" />
+            <AppRoutes />
+          </TooltipProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+    </Router>
   );
 }
 
